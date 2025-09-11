@@ -1,0 +1,305 @@
+{
+  "intents": [
+    {
+      "tag": "greetings",
+      "patterns": ["hello", "hi", "hey", "good morning", "good evening", "good night"],
+      "responses": [
+        "Hello! How are you doing today?",
+        "Hi there! How can I support you today?",
+        "Good morning! I hope today goes well for you.",
+        "Good evening! How has your day been?",
+        "Good night! Wishing you a calm and restful evening."
+      ]
+    },
+    {
+      "tag": "farewells",
+      "patterns": ["bye", "okay bye", "good night"],
+      "responses": [
+        "Goodbye! Wishing you peace and comfort today.",
+        "Goodbye, Rafiki. Take care, and remember you are doing great.",
+        "Good night Rafiki. Rest well and take care."
+      ]
+    },
+    {
+      "tag": "caregiver_emotions",
+      "patterns": ["i am good", "i am so stressed", "i am sad", "i am tired", "feeling sad", "feeling frustrated", "feeling overwhelmed", "feeling happy", "feeling anxious"],
+      "responses": [
+        "That's great! I am happy to hear you are doing well.",
+        "I am sorry you are feeling stressed. Would you like me to share a calming tip?",
+        "I hear you Rafiki. It's okay to feel sad. You are not alone. Would you like to share what is bothering you?",
+        "You must be exhausted. Please remember to rest whenever you can.",
+        "It’s okay to feel sad. I’m here for you, and you’re not alone.",
+        "It’s normal to feel frustrated sometimes. Would you like a calming tip?",
+        "Take a moment for yourself. Try deep breathing or a short break.",
+        "I’m glad you’re feeling good! Celebrate this moment with your child.",
+        "Anxiety is tough. Let’s try grounding techniques together."
+      ]
+    },
+    {
+      "tag": "challenging_behaviors",
+      "patterns": ["screaming", "meltdown", "crying", "tantrum", "shouting", "hitting", "biting", "aggression", "self harm", "dangerous behavior", "severe meltdown"],
+      "responses": [
+        "Children with autism may scream when overwhelmed or overstimulated. Try calming strategies such as reducing noise, dimming lights, giving them a safe space, or using a comfort item.",
+        "During a meltdown, stay calm, avoid punishment, and ensure safety. Reduce demands, move to a quiet environment, and reassure your child.",
+        "Crying may be the child's way to communicate needs. Stay calm, check for hunger, tiredness, or sensory discomfort.",
+        "Tantrums differ from meltdowns, but both need calm responses. Stay consistent, use simple language, and provide comfort when needed.",
+        "Shouting may signal frustration. Stay calm, reduce demands, and use simple choices.",
+        "Hitting often signals frustration. Redirect gently, model calm responses, and avoid harsh punishment.",
+        "Biting may be a way to express needs or sensory discomfort. Offer alternatives like chewable toys and teach simple communication.",
+        "Aggression may signal frustration or unmet needs. Try to identify triggers, teach calming strategies, and ensure safety first.",
+        "Behaviors like head banging or scratching may signal distress. Ensure safety, track triggers, and seek professional guidance.",
+        "Keep the environment safe and remove hazards. Seek professional help urgently.",
+        "Ensure everyone’s safety first. Remove dangerous objects and stay calm. You can reach a professional if needed."
+      ]
+    },
+    {
+      "tag": "stimming_and_sensory",
+      "patterns": ["hand flapping", "stimming", "pacing", "sensory", "fear of loud sounds", "sensitivity to touch", "sensitivity to light", "sensitivity to smells", "sensitivity to crowds", "noise sensitivity", "light sensitivity", "touch sensitivity", "crowd sensitivity", "sensory break"],
+      "responses": [
+        "Hand flapping is a common stim. Allow it unless it causes harm or interferes with safety.",
+        "Stimming (like hand flapping or rocking) is usually self-soothing. It's best not to stop it unless it's harmful.",
+        "Pacing can be self-soothing. Provide a safe space for movement and respect the need.",
+        "Some children are sensitive to light, sound, or touch. Provide sensory-friendly environments and use calming tools like headphones or weighted blankets.",
+        "Noise sensitivity is common. Headphones, earplugs, or gradual exposure can help.",
+        "Some children dislike hugs or certain fabrics. Respect preferences and introduce textures slowly.",
+        "Bright light can be overwhelming. Sunglasses, caps, and soft lighting at home can reduce discomfort.",
+        "Strong smells may cause distress. Use unscented soaps, cleaners, and avoid strong perfumes.",
+        "Crowds may overwhelm. Plan outings during off-peak hours and create quiet escape options.",
+        "Use calming tools like headphones, sunglasses, or a comfort object. Take breaks in quiet spaces when needed.",
+        "Some children are sensitive to light, sound, or touch. Provide sensory-friendly environments and use calming tools like headphones or weighted blankets.",
+        "Short breaks with preferred activities or stimming can prevent meltdowns."
+      ]
+    },
+    {
+      "tag": "daily_routines",
+      "patterns": ["morning routine", "bedtime routine", "routines", "toilet training", "meal transitions", "chores", "homework", "screen time", "daily schedule", "morning struggles", "bedtime struggles", "new activities", "school transition"],
+      "responses": [
+        "Start mornings calmly with a predictable sequence (wake up, brush teeth, breakfast). Visual schedules and gentle reminders help reduce stress.",
+        "Consistent bedtime routines improve sleep. Use calming cues like dim lights, a story, and quiet activities before bed.",
+        "Children often benefit from structured routines. Use visual schedules, consistent meal/bedtime patterns, and clear transitions.",
+        "Toilet training can take time. Use visual schedules, rewards, and consistency. Be patient and avoid punishment for accidents.",
+        "Give a warning before meals, use a visual schedule, and keep mealtimes consistent.",
+        "Assign small chores with clear steps and visual guides. Praise effort, not just completion.",
+        "Break homework into small steps, use timers, and give frequent breaks. Praise effort, not just results.",
+        "Limit screen time, balance with physical play and face-to-face interaction. Choose educational and calming content.",
+        "Break the morning into small steps, use visuals, and celebrate each step completed.",
+        "Keep bedtime consistent with calm activities, dim lights, and favorite bedtime objects.",
+        "Introduce new activities gradually. Use short sessions, offer choices, and celebrate small successes.",
+        "When preparing for school, talk to teachers about your child's needs, provide visual aids, and consider special education support if available."
+      ]
+    },
+    {
+      "tag": "education_support",
+      "patterns": ["school", "exams", "classroom support", "bullying", "teacher meeting", "school anxiety", "school transport", "exam accommodations", "school inclusion", "support school", "school advocacy", "group work"],
+      "responses": [
+        "When preparing for school, talk to teachers about your child's needs, provide visual aids, and consider special education support if available.",
+        "Exams may be stressful. Practice sample papers, request extra time if possible, and teach calming breathing techniques.",
+        "Request visual schedules, quiet breaks, and structured seating from teachers.",
+        "Work with teachers to stop bullying. Teach your child to seek help from trusted adults.",
+        "Share your child’s strengths and needs openly with teachers for better support.",
+        "Visit the school beforehand, use social stories, and build a predictable routine.",
+        "Prepare your child for buses with visuals and sit near supportive staff if possible.",
+        "Ask schools for extra time, quiet rooms, or alternative assessments where possible.",
+        "Kenya’s Competency-Based Curriculum allows accommodations. Advocate for your child’s needs.",
+        "Talk to teachers about your child's needs, provide visual aids, and consider special education support if available.",
+        "Request Individual Education Plans (IEPs) where available in Kenyan schools.",
+        "Pair your child with understanding peers and give clear roles in group tasks."
+      ]
+    },
+    {
+      "tag": "health_and_therapy",
+      "patterns": ["diagnosis", "therapy", "speech therapy", "occupational therapy", "physical therapy", "behavior therapy", "play therapy", "music therapy", "art therapy", "sensory integration", "aba", "therapy options", "therapy availability", "therapy_nairobi", "autism_treatment", "autism_best_therapy", "autism_medication", "melatonin", "diagnosis_bot"],
+      "responses": [
+        "Only a qualified clinician can provide a diagnosis. In Kenya, you can seek assessments at: Kenya Institute of Special Education (KISE), Kaizora Centre, or other child development clinics.",
+        "Therapies that may help include speech therapy, occupational therapy, and behavioral interventions. In Kenya, you can check KISE, Kaizora, or local hospitals.",
+        "Speech therapy can improve communication, even for non-verbal children. Visual supports, sign language, and AAC devices may also be used.",
+        "Occupational therapy helps with daily skills such as dressing, eating, and handwriting. It also addresses sensory processing issues.",
+        "Physical therapy supports gross motor skills like balance, coordination, and strength.",
+        "Applied Behavior Analysis (ABA) is widely used to improve social, communication, and behavior skills.",
+        "Music and art therapy may provide expressive outlets and reduce anxiety.",
+        "Therapy availability varies by location. Nairobi and Mombasa have more centers, while rural areas may have limited options. Online sessions are also an option.",
+        "Medications may manage co-occurring conditions but do not cure autism. Always consult a doctor before using any medication.",
+        "Melatonin may be used for sleep issues, but only under medical supervision.",
+        "Track therapy progress consistently. Short, consistent sessions are often more effective."
+      ]
+    },
+    {
+      "tag": "caregiver_tips",
+      "patterns": ["self care", "stress relief", "burnout", "support groups", "connect parents", "daily tips", "parenting tips", "stress check"],
+      "responses": [
+        "Remember to take short breaks, hydrate, and ask for help when needed. Caring for yourself is important.",
+        "Small, consistent routines make a big difference. Celebrate small wins.",
+        "You can join local support groups or online forums to connect with other caregivers in Kenya.",
+        "How stressed do you feel today on a scale of 1–10? Let’s find a helpful strategy.",
+        "Signs of burnout include irritability, fatigue, and feeling overwhelmed. Reach out early for support."
+      ]
+    },
+    {
+      "tag": "small_talk",
+      "patterns": ["how are you", "how is your day", "how is your child", "what's up", "tell me something", "compliment", "thank you"],
+      "responses": [
+        "I’m doing well! How about you today?",
+        "How has your child’s day been? Any small wins or challenges?",
+        "It looks like it’s sunny today. A great day for outdoor play if your child feels up to it!",
+        "You’re doing a great job caring for your child. Small steps matter.",
+        "You’re welcome! I’m always here to help."
+      ]
+    },
+    {
+      "tag": "emergency",
+      "patterns": ["urgent", "danger", "emergency", "child in danger", "call for help"],
+      "responses": [
+        "If you or your child are in immediate danger, call local emergency services. In Kenya, Childline 116 is available for urgent support.",
+        "Call an emergency number immediately (Kenya: 999/112) and stay with your child until help arrives."
+      ]
+    },
+    {
+      "tag": "social_skills",
+      "patterns": ["sharing", "turn_taking", "eye_contact", "greetings_others", "conversation_skills", "friendship_building", "empathy", "recognizing_emotions", "play_skills"],
+      "responses": [
+        "Teach sharing and turn-taking using simple games, visual cues, and praise.",
+        "Model greetings, use role-play, and gently encourage eye contact.",
+        "Break conversations into small steps, model responses, and use visual prompts.",
+        "Support friendship building by arranging playdates and modeling social interaction.",
+        "Teach empathy by labeling emotions and discussing feelings in stories or real-life situations.",
+        "Encourage play skills through structured games and guided peer interaction."
+      ]
+    },
+    {
+      "tag": "hygiene_and_selfcare",
+      "patterns": ["handwashing", "brushing_teeth", "bathing", "dressing", "toileting", "personal_hygiene", "grooming", "skin_care", "nail_cutting"],
+      "responses": [
+        "Teach handwashing with visual steps, songs, or timers to make it fun.",
+        "Turn toothbrushing into a predictable routine, try flavored toothpaste, and let your child hold the brush too.",
+        "Make bath time fun with toys or songs, use warm water, and avoid strong-smelling soaps.",
+        "Choose simple clothing, use Velcro instead of buttons, and teach dressing in small steps.",
+        "Use visual schedules, praise independence, and provide consistent toilet routines.",
+        "Encourage grooming with simple routines, rewards, and practice steps."
+      ]
+    },
+   {
+      "tag": "travel_and_safety",
+      "patterns": ["travel", "transport", "traffic_safety", "road_crossing", "outings", "crowds", "public_places", "stranger_safety", "bus", "taxi", "airport", "emergency_plan"],
+      "responses": [
+        "When traveling with your child, plan ahead with visual schedules and calming items.",
+        "Use child safety measures like seat belts, car seats, and helmets when moving around.",
+        "Teach road safety and use hand-holding or harnesses in crowded areas.",
+        "Prepare your child for buses, taxis, and other public transport with social stories and visual cues.",
+        "Introduce airports or busy public places gradually, allow breaks, and bring noise-canceling headphones.",
+        "Create an emergency plan, teach your child what to do if separated, and keep ID information handy."
+      ]
+    },
+     {
+      "tag": "caregiver_support",
+      "patterns": ["parent_support", "self_care", "support_groups", "caregiver_fatigue", "stress_relief", "burnout", "caregiver_stress", "overwhelmed_parent", "work_life_balance", "connect_parents", "self_reflection", "family_balance", "sibling_support"],
+      "responses": [
+        "Caring for a child with autism can be stressful. Seek support groups like Autism Society of Kenya, talk with other parents, and take breaks when possible.",
+        "Taking care of yourself is crucial. Seek support, take breaks, and prioritize your well-being.",
+        "Join local support groups like Autism Society of Kenya to connect with other parents and share experiences.",
+        "Caring is hard work. Take short breaks and ask trusted friends or family for help.",
+        "Practice deep breathing, take short walks, or join a caregiver support group.",
+        "Recognize burnout early. Reach out to friends, professionals, or community groups for support.",
+        "Take breaks when possible, connect with other caregivers, and practice simple self-care routines like short walks or deep breathing.",
+        "Reach out for support, write down your stress triggers, and take small breaks when possible. You’re not alone.",
+        "Try creating a shared calendar, ask family for support, and explore respite services where available.",
+        "Local autism groups, schools, and hospitals may connect you with other parents. Online communities can also provide support.",
+        "Celebrate small wins. Remind yourself that progress may be slow but meaningful.",
+        "Spend time with siblings and spouse to maintain healthy family balance.",
+        "Explain autism to siblings in simple words and encourage them to share feelings."
+      ]
+        },
+        {
+      "tag": "sleep_challenges",
+      "patterns": [
+        "sleep issues",
+        "sleep problems",
+        "child won't sleep",
+        "bedtime struggles",
+        "autism sleep",
+        "sleep routine",
+        "night waking",
+        "restless sleep",
+        "difficulty sleeping",
+        "poor sleep",
+        "bedtime resistance",
+        "trouble falling asleep",
+        "wake up at night",
+        "sleep tips",
+        "melatonin"
+      ],
+      "responses": [
+        "Consistent bedtime routines improve sleep. Use calming cues like dim lights, a story, and quiet activities.",
+        "Avoid screen time an hour before bed.",
+        "Keep the bedroom dark, cool, and quiet for better sleep.",
+        "Soothing music or white noise may help your child relax.",
+        "Introduce calming rituals like deep breathing or gentle massage.",
+        "Try to keep bedtime and waking time consistent, even on weekends.",
+        "Avoid sugary snacks close to bedtime.",
+        "In Kenya, many caregivers find herbal teas (for adults, not children) helpful for winding down.",
+        "Melatonin may be used under medical supervision—always ask a doctor first."
+      ]
+    },
+     {
+      "tag": "play_and_activities",
+      "patterns": [
+        "play ideas",
+        "fun activities",
+        "games",
+        "learning through play",
+        "home activities",
+        "indoor play",
+        "outdoor play",
+        "child activities",
+        "bored child",
+        "interactive play",
+        "play tips",
+        "group play",
+        "autism activities",
+        "playtime",
+        "play suggestions"
+      ],
+      "responses": [
+        "Play can help your child learn communication and social skills.",
+        "Simple games like peekaboo or building blocks work well.",
+        "Outdoor play such as running or ball games can release energy.",
+        "Use songs, dance, or clapping games to build interaction.",
+        "Pretend play with dolls or cars can encourage imagination.",
+        "In Kenya, common games like skipping rope or ‘blada’ can be adapted for fun learning.",
+        "Play doesn’t need expensive toys—use household items like cups or spoons.",
+        "Water play (pouring, scooping) can be calming.",
+        "Keep play sessions short but frequent for the best impact."
+      ]
+    },
+     {
+      "tag": "nutrition",
+      "patterns": [
+        "food tips",
+        "diet",
+        "nutrition",
+        "feeding issues",
+        "picky eating",
+        "meal planning",
+        "healthy food",
+        "child won’t eat",
+        "feeding challenges",
+        "eating habits",
+        "meal ideas",
+        "nutrition advice",
+        "balanced diet",
+        "child nutrition",
+        "autism diet"
+      ],
+      "responses": [
+        "Many autistic children have picky eating habits. Try introducing foods slowly, one at a time.",
+        "Stick to familiar foods but keep offering new items gently without pressure.",
+        "Some children prefer specific textures. Experiment with crunchy, soft, or smooth foods.",
+        "Make meals visual by showing pictures of food before eating.",
+        "Create a calm and consistent eating environment.",
+        "In Kenya, you can include common foods like ugali, rice, beans, sukuma wiki, and fruits for balance.",
+        "Consult a pediatrician or nutritionist if eating problems are severe.",
+        "Avoid forcing food; celebrate even small attempts.",
+        "Offer healthy snacks like bananas, avocados, or yoghurt in between meals."
+      ]
+    }
+      ]
+    }
