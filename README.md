@@ -128,8 +128,6 @@ Can be extended with a backend API endpoint (e.g., Flask/FastAPI) for cloud-base
 
 ## 🔮 Future Improvements
 
-Integrate emotional sentiment detection for empathetic tone adaptation.
-
 Expand dataset with multilingual caregiver–child communication scenarios.
 
 Optimize response latency for on-device inference using quantized deployment.
