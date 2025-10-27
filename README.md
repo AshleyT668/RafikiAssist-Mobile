@@ -1,160 +1,247 @@
-# 🌈 Rafiki Assist – A Mobile Application for Autistic Children and their Caregivers
+# 🌈 Rafiki Assist
+
+Rafiki Assist is a mobile assistive communication and caregiver support application designed to help children with autism and their caregivers. The app provides a **child-friendly text-to-speech (TTS)** interface and a **caregiver dashboard** featuring analytics, symbol management, and an AI-powered chatbot for emotional and practical support.
+
+---
+
+## 🧩 Table of Contents
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [System Architecture](#system-architecture)
+- [Implementation Environment](#implementation-environment)
+  - [Hardware Requirements](#hardware-requirements)
+  - [Software Requirements](#software-requirements)
+- [Modules and Components](#modules-and-components)
+  - [Authentication & 2FA](#authentication--2fa)
+  - [Landing Page / Role Selection](#landing-page--role-selection)
+  - [Text-to-Speech (TTS) Module](#text-to-speech-tts-module)
+  - [Caregiver Dashboard](#caregiver-dashboard)
+  - [Chatbot (Rafiki Bot)](#chatbot-rafiki-bot)
+  - [Profile & Settings](#profile--settings)
+- [Dataset and Model Training](#dataset-and-model-training)
+  - [Data Description](#data-description)
+  - [Preprocessing & Encoding](#preprocessing--encoding)
+  - [Training Process](#training-process)
+  - [Evaluation Metrics](#evaluation-metrics)
+- [Testing and Validation](#testing-and-validation)
+- [Setup Instructions](#setup-instructions)
+- [Future Work](#future-work)
+- [License](#license)
+
+---
+
+## 🧠 Overview
+
+**Rafiki Assist** bridges the communication gap between non-verbal autistic children and their caregivers through assistive technology.  
+The app integrates:
+- A **symbol-based Text-to-Speech module** for children,
+- A **caregiver dashboard** for managing symbols and tracking usage,
+- And an **AI-driven chatbot** fine-tuned to provide empathetic support and guidance to autism caregivers.
+
+The system operates entirely online and currently supports **English** as the primary language.
+
+---
+
+## 🌟 Key Features
+
+| Feature | Description |
+|----------|-------------|
+| 👩‍👦 **Role-based Access** | Separate interfaces for caregivers and children. |
+| 🔊 **Customizable TTS Module** | Converts selected symbols to speech using `expo-speech`. Caregivers can upload **custom familiar symbols/images** to personalize communication. |
+| 💬 **Rafiki Chatbot** | Offers autism caregiving advice using a fine-tuned language model trained on curated caregiver datasets. |
+| 🧮 **Symbol Analytics** | Tracks and visualizes symbol usage to help caregivers understand communication trends. |
+| 🔐 **Secure Login + 2FA** | Uses Firebase Authentication and optional Google Authenticator integration for two-factor security. |
+| ⚙️ **Profile & Settings** | Centralized settings hub for appearance, accessibility, and account management. |
+| 🌐 **Cross-Platform** | Built with **React Native (Expo)** for Android and iOS compatibility. |
+
+---
+
+## 🏗️ System Architecture
+
+The app integrates the following core technologies:
+
+- **Frontend:** React Native (Expo)
+- **Backend & Database:** Firebase Firestore, Firebase Storage, Firebase Authentication
+- **Model Hosting:** Hugging Face (Fine-tuned Phi-3-mini-4k-instruct)
+- **Version Control:** Git + GitHub
+- **Deployment:** Expo Go (Development) / EAS Build (Production)
+- **Testing:** PyTest, Postman
+- **Security:** Google Authenticator 2FA
 
-## Empowering communication for every child.
+---
 
-Rafiki Assist is an assistive communication mobile application built using React Native (Expo).
-It aims to support children with communication challenges—especially autistic and nonverbal children—by providing an accessible, friendly, and interactive platform. The app also empowers caregivers with tools to personalize communication and monitor interaction progress.
+## 💻 Implementation Environment
 
-# 🧩 Key Features
+### 🔧 Hardware Requirements
 
-## 👧 Child-Facing Module
+| Hardware | Description / Justification |
+|-----------|------------------------------|
+| Smartphone (Android/iOS) | Required for deployment and use. |
+| Processor | Quad-core 1.5GHz+ for smooth TTS and rendering. |
+| RAM | Minimum 2GB (4GB recommended). |
+| Storage | At least 200MB free for app + cached symbols. |
+| Display | 5-inch+ screen for accessibility. |
+| Speaker | Essential for audio output from TTS. |
+| Internet | Stable 3G/4G or Wi-Fi connection for Firebase operations. |
+| Development Machine | Windows 10+ or macOS 10.15+ with Node.js, Expo CLI, and VS Code. |
 
-Text-to-Speech (TTS) System: Enables children to express themselves by selecting words, phrases, or symbols that are converted into speech.
+### 🧰 Software Requirements
 
-Autism-Friendly Design: Uses vibrant colors, large buttons, soft animations, and simple navigation for comfort and accessibility.
+| Component | Specification |
+|------------|---------------|
+| Mobile OS | Android, iOS |
+| Language | JavaScript |
+| Database | Firebase Firestore |
+| Storage | Firebase Storage |
+| Authentication | Firebase Auth + Google Authenticator |
+| TTS | Expo Speech API |
+| Image Upload | Expo Image Picker |
+| Hosting | Firebase Hosting |
+| Version Control | Git + GitHub |
 
-## 👩‍👧 Caregiver Module
+---
 
-Dashboard: Displays usage insights, child progress, and recent activity.
+## ⚙️ Modules and Components
 
-Chatbot Interface: Provides caregivers with interactive assistance, resources, and personalized suggestions.
+### 🔐 Authentication & 2FA
+Users register via email and password. Optional **Google Authenticator** integration provides two-factor security through a time-based 6-digit verification code.
 
-Symbol Upload Interface: Allows caregivers to upload new images or symbols for communication customization.
+### 🧭 Landing Page / Role Selection
+Upon login, users select their role:
+- **Child:** Redirected to the TTS module.
+- **Caregiver:** Access to dashboard and chatbot.
 
-## ⚙️ Settings & Personalization
+### 🔊 Text-to-Speech (TTS) Module
+A child-friendly interface where children tap symbols to generate speech using Expo Speech.  
+Caregivers can upload **custom images** familiar to the child, making Rafiki Assist’s TTS unique and personal.
 
+### 📊 Caregiver Dashboard
+Provides access to:
+- **Symbol Analytics:** Displays top 5 most-used symbols weekly.
+- **Symbol Manager:** Upload, update, or delete TTS symbols.
+- **Chatbot:** Access to Rafiki Bot for caregiving support.
 
+### 🤖 Chatbot (Rafiki Bot)
+A fine-tuned conversational model trained to respond empathetically and contextually to caregiver queries.  
+The chatbot’s dataset includes caregiver FAQs, autism guides, and real-life insights contributed by volunteer caregivers.
 
-## 🧠 Project Objective
-The goal of Rafiki Assist is to:
+### ⚙️ Profile & Settings
+A unified interface for:
+- Profile editing & password updates  
+- 2FA setup & security management  
+- Dark Mode & High Contrast accessibility options  
+- Quick navigation to analytics and symbol management
 
-Bridge communication gaps for nonverbal or speech-delayed children.
+---
 
-Support caregivers through interactive tools and progress feedback.
+## 🧬 Dataset and Model Training
 
-Promote inclusivity through technology and user-centered design.
+### 📁 Data Description
+A custom dataset curated from caregiver guides, online forums, and contributions from consenting caregivers. Stored as JSONL under the Kaggle repository:  
+[`ashleytizzu/rafikibot`](https://www.kaggle.com/datasets/ashleytizzu/rafikibot)
 
-## 🛠️ Tech Stack
-Framework: React Native (Expo)
+Each record:
+```json
+{"formatted": "### Question: ... ### Answer: ..."}
+```
+---
 
-Language: JavaScript / TypeScript
+## 🧹 Preprocessing & Encoding
+Data was parsed into “prompt” and “label” fields using a custom parse_formatted function. Tokenization was performed using AutoTokenizer from the Hugging Face Transformers library with the microsoft/phi-3-mini-4k-instruct model.
 
-UI Library: React Native Paper, Shadcn UI (custom components)
+---
 
-Navigation: React Navigation
+🧠 Training Process
 
-Text-to-Speech: Expo Speech API
+- Base Model: microsoft/phi-3-mini-4k-instruct
 
-State Management: Context API / Redux (as applicable)
+- Fine-tuning Method: LoRA (Low-Rank Adaptation)
 
-## 🤖 Chatbot Model Overview
-The Rafiki Bot is the intelligent caregiver assistant within the Rafiki Assist ecosystem. It was developed and fine-tuned using transformer-based language modeling techniques to provide empathetic, informative, and context-aware responses to caregivers’ queries.
+- Learning Rate: 2e-4
 
-## 🧠 Model Architecture
+- Batch Size: 2
 
-Base Model: Microsoft Phi-3 Mini (4K Instruct)
+- Optimizer: AdamW
 
-Type: Causal Language Model (Decoder-only Transformer)
+- Precision: FP16
 
-Parameter Size: ~3.8B
+- Epochs: 1
 
-Optimization: 4-bit quantization (BitsAndBytes) for memory efficiency
+Both training and validation losses decreased consistently, indicating effective learning.
 
-Fine-Tuning Method: LoRA (Low-Rank Adaptation) via the peft library
+---
 
-Frameworks Used: Hugging Face Transformers, Datasets, PEFT, Accelerate, BitsAndBytes, TRL
+📈 Evaluation Metrics
 
-This setup enables efficient training on limited hardware while maintaining strong language understanding and generation capabilities.
+Metric: Perplexity
 
-## 📊 Dataset Preparation
-A custom instruction–response dataset was curated and uploaded to Kaggle under the dataset [ashleytizzu/rafikibot.]
-The dataset consisted of structured caregiver queries and expected chatbot responses in a conversational format.
-### Example
-Question: How can I help my child communicate better at home?
+Score: 1.78 (Lower is better)
 
-Answer: Use short, clear sentences and consistent visual aids. Encourage expression through pictures or gestures before speech.
+Low perplexity indicated that the model effectively captured empathetic, context-aware caregiver communication.
 
-Each entry was reformatted into a prompt–label pair for fine-tuning using the following format:
-### Question:
-[User Input]
-### Answer:
-[Expected Response]
+---
 
-The dataset was split into 80% training and 20% validation sets for evaluation.
+🧪 Testing and Validation
 
-## ⚙️ Fine-Tuning Process
-### 1.Model Loading:
-The base model microsoft/phi-3-mini-4k-instruct was loaded with 4-bit quantization to optimize GPU memory usage.
+Testing focused on:
 
-### 2.LoRA Configuration:
-Target layers for adaptation included:
-["qkv_proj", "o_proj", "fc1", "fc2"]
+✅ Functional tests for TTS, authentication, and chatbot response.
 
-with parameters:
-r=16, lora_alpha=32, lora_dropout=0.05
+✅ Integration tests for Firebase data flow.
 
-### 3.Training Setup:
+✅ UI/UX validation with sample caregivers.
 
-Batch Size: 2
+✅ Performance validation on physical Android and iOS devices.
 
-Gradient Accumulation Steps: 4
+Testing Tools:
 
-Learning Rate: 2e-4
+PyTest: Automated backend test scripts.
 
-Epochs: 1
+Postman: API endpoint validation.
 
-Optimizer: paged_adamw_32bit
+Expo Go: Real-device frontend testing.
 
-Precision: FP16
+---
 
-### 4.Metrics:
-The model’s performance was tracked using training loss, evaluation loss, and perplexity.
-Visualization of loss curves was generated using Matplotlib.
+**1. Clone Repository**
 
-## 🧪 Evaluation
-After training, the model achieved low perplexity and stable loss convergence, indicating effective adaptation to the domain-specific caregiver communication dataset.
-The resulting fine-tuned model (rafiki-phi3) was saved locally and used to generate responses through a text-generation pipeline.
+```
+git clone https://github.com/<your-username>/RafikiAssist.git
+cd RafikiAssist
+````
+**2.Install Dependencies**
 
-## 💬 Deployment Integration
-
-The fine-tuned chatbot is integrated into the Rafiki Assist caregiver interface, allowing real-time text-based interaction.
-The model:
-
-Handles caregiver queries empathetically and informatively.
-
-Supports multi-turn conversation by maintaining short chat history context.
-
-Can be extended with a backend API endpoint (e.g., Flask/FastAPI) for cloud-based deployment.
-
-## 🔮 Future Improvements
-
-Expand dataset with multilingual caregiver–child communication scenarios.
-
-Optimize response latency for on-device inference using quantized deployment.
-
-## ⚙️ Installation & Setup
-### Prerequisites
-
-Ensure you have:
-
-Node.js (v18+)
-
-Expo CLI installed
-
-Android Studio or Expo Go app for testing
-
-### Steps
-#Clone the repository
-git clone https://github.com/AshleyT668/RafikiAssist-Mobile.git
-
-#Navigate into the project
-
-cd RafikiAssist-Mobile
-
-#Install dependencies
-
+```
 npm install
+```
+**3.Configure Firebase**
 
-#Start the Expo development server
+Create a Firebase project.
 
+Add your app’s Firebase config to firebaseConfig.js.
+
+**4.Run App in Development Mode**
+```
 npx expo start
+```
+**5.Build for Production**
+```
+eas build -p android
+eas build -p ios
+```
+---
+**6.🚀 Future Work**
+✅ Offline support for TTS and symbol cache
+
+🤖 AI-powered caregiver chatbot with real-time online resources
+
+🌍 Multi-language support beyond English
+
+🧠 Data analytics on TTS usage patterns
+
+💾 Cloud backup for uploaded symbols and profiles
+
+
+
+
+
