@@ -2,6 +2,7 @@
   "expo": {
     "name": "Rafiki",
     "slug": "Rafiki",
+    "scheme": "rafiki",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -30,6 +31,12 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
+      "googleAuth": {
+        "expoClientId": "",
+        "iosClientId": "965798609960-geolj23ighgusndn1kbdf470ommuvaet.apps.googleusercontent.com",
+        "androidClientId": "",
+        "webClientId": "965798609960-i9073tkg20vsgo20p6j9npolje19np73.apps.googleusercontent.com"
+      },
       "eas": {
         "projectId": "c32488a8-021b-4921-b482-708208255e03"
       }

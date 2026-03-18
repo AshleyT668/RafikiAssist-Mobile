@@ -1,6 +1,8 @@
 // context/SymbolsContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
 
 const SymbolsContext = createContext();
 
@@ -16,10 +18,20 @@ export const SymbolsProvider = ({ children }) => {
   const [symbols, setSymbols] = useState([]);
   const [lastResetDate, setLastResetDate] = useState(new Date());
   const [isLoaded, setIsLoaded] = useState(false);
+  const [storageOwnerId, setStorageOwnerId] = useState(null);
 
-  // Load symbols and last reset date from storage on app start
+  const getSymbolsKey = (userId) => `symbols:${userId}`;
+  const getLastResetDateKey = (userId) => `lastResetDate:${userId}`;
+
   useEffect(() => {
-    loadInitialData();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      const nextUserId = user?.uid || null;
+      setStorageOwnerId(nextUserId);
+      setIsLoaded(false);
+      await loadInitialData(nextUserId);
+    });
+
+    return unsubscribe;
   }, []);
 
   // Check for weekly reset whenever symbols or lastResetDate changes
@@ -29,43 +41,55 @@ export const SymbolsProvider = ({ children }) => {
     }
   }, [isLoaded, symbols, lastResetDate]);
 
-  const loadInitialData = async () => {
+  const loadInitialData = async (userId) => {
+    if (!userId) {
+      setSymbols([]);
+      setLastResetDate(new Date());
+      setIsLoaded(true);
+      return;
+    }
+
     try {
-      // Load symbols
-      const storedSymbols = await AsyncStorage.getItem('symbols');
+      const storedSymbols = await AsyncStorage.getItem(getSymbolsKey(userId));
       if (storedSymbols) {
         setSymbols(JSON.parse(storedSymbols));
+      } else {
+        setSymbols([]);
       }
 
-      // Load last reset date
-      const storedResetDate = await AsyncStorage.getItem('lastResetDate');
+      const storedResetDate = await AsyncStorage.getItem(getLastResetDateKey(userId));
       if (storedResetDate) {
         setLastResetDate(new Date(storedResetDate));
       } else {
-        // First time setup - set to current date
         const now = new Date();
         setLastResetDate(now);
-        await AsyncStorage.setItem('lastResetDate', now.toISOString());
+        await AsyncStorage.setItem(getLastResetDateKey(userId), now.toISOString());
       }
-      
+
       setIsLoaded(true);
     } catch (error) {
       console.error('Error loading data from storage:', error);
+      setSymbols([]);
+      setLastResetDate(new Date());
       setIsLoaded(true);
     }
   };
 
   const saveSymbolsToStorage = async (symbolsToSave) => {
+    if (!storageOwnerId) return;
+
     try {
-      await AsyncStorage.setItem('symbols', JSON.stringify(symbolsToSave));
+      await AsyncStorage.setItem(getSymbolsKey(storageOwnerId), JSON.stringify(symbolsToSave));
     } catch (error) {
       console.error('Error saving symbols to storage:', error);
     }
   };
 
   const saveLastResetDateToStorage = async (date) => {
+    if (!storageOwnerId) return;
+
     try {
-      await AsyncStorage.setItem('lastResetDate', date.toISOString());
+      await AsyncStorage.setItem(getLastResetDateKey(storageOwnerId), date.toISOString());
     } catch (error) {
       console.error('Error saving reset date to storage:', error);
     }

@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { sendVerificationEmail, auth, reloadUser } from '../firebaseConfig';
 import { useAccessibility } from '../context/AccessibilityContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function EmailVerificationScreen({ navigation }) {
   const { user, emailVerified, refreshVerificationStatus } = useAuth();
@@ -15,6 +16,7 @@ export default function EmailVerificationScreen({ navigation }) {
   const [checking, setChecking] = useState(false);
   const [autoCheckCount, setAutoCheckCount] = useState(0);
   const { highContrast, largerText } = useAccessibility();
+  const { theme, isDark } = useTheme();
 
   // Auto-check verification status every 15 seconds
   useEffect(() => {
@@ -108,10 +110,6 @@ export default function EmailVerificationScreen({ navigation }) {
     try {
       console.log('🚪 User signing out from verification screen');
       await auth.signOut();
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -128,16 +126,17 @@ export default function EmailVerificationScreen({ navigation }) {
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Please log in first</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.title, { color: theme.text }]}>Please log in first</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: theme.background }]}>
       <Text style={[
         styles.title,
+        { color: theme.text },
         largerText && styles.largerTitle
       ]}>
         Verify Your Email
@@ -145,31 +144,34 @@ export default function EmailVerificationScreen({ navigation }) {
       
       <Text style={[
         styles.message,
+        { color: theme.subtext },
         largerText && styles.largerMessage
       ]}>
         We've sent a verification link to:
       </Text>
       
-      <Text style={styles.email}>{user.email}</Text>
+      <Text style={[styles.email, { color: theme.primary }]}>{user.email}</Text>
       
       <Text style={[
         styles.instructions,
+        { color: theme.subtext },
         largerText && styles.largerInstructions
       ]}>
         Please check your email and click the verification link to activate your account.
       </Text>
 
-      <Text style={styles.note}>
+      <Text style={[styles.note, { color: theme.warning }]}>
         💡 Don't forget to check your spam folder!
       </Text>
 
-      <Text style={styles.debugInfo}>
+      <Text style={[styles.debugInfo, { color: theme.subtext }]}>
         Auto-checking every 15 seconds... ({autoCheckCount} checks)
       </Text>
 
       <TouchableOpacity
         style={[
           styles.button,
+          { backgroundColor: theme.primary },
           (resending || loading) && styles.buttonDisabled,
           highContrast && styles.highContrastBorder
         ]}
@@ -191,6 +193,7 @@ export default function EmailVerificationScreen({ navigation }) {
       <TouchableOpacity
         style={[
           styles.secondaryButton,
+          { borderColor: theme.primary, backgroundColor: theme.card },
           checking && styles.buttonDisabled,
           highContrast && styles.highContrastBorder
         ]}
@@ -198,10 +201,11 @@ export default function EmailVerificationScreen({ navigation }) {
         disabled={checking}
       >
         {checking ? (
-          <ActivityIndicator color="#3da49a" />
+          <ActivityIndicator color={theme.primary} />
         ) : (
           <Text style={[
             styles.secondaryButtonText,
+            { color: theme.primary },
             largerText && styles.largerButtonText
           ]}>
             Check Verification Status
@@ -213,18 +217,18 @@ export default function EmailVerificationScreen({ navigation }) {
         style={styles.linkButton}
         onPress={handleSignOut}
       >
-        <Text style={styles.linkButtonText}>
+        <Text style={[styles.linkButtonText, { color: theme.subtext }]}>
           Use Different Email
         </Text>
       </TouchableOpacity>
 
       {/* Debug section - can be removed in production */}
-      <View style={styles.debugSection}>
-        <Text style={styles.debugTitle}>Debug Info:</Text>
-        <Text style={styles.debugText}>Email: {user.email}</Text>
-        <Text style={styles.debugText}>UID: {user.uid.substring(0, 8)}...</Text>
-        <Text style={styles.debugText}>Verified: {emailVerified ? 'Yes' : 'No'}</Text>
-        <Text style={styles.debugText}>Checks: {autoCheckCount}</Text>
+      <View style={[styles.debugSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <Text style={[styles.debugTitle, { color: theme.subtext }]}>Debug Info:</Text>
+        <Text style={[styles.debugText, { color: theme.subtext }]}>Email: {user.email}</Text>
+        <Text style={[styles.debugText, { color: theme.subtext }]}>UID: {user.uid.substring(0, 8)}...</Text>
+        <Text style={[styles.debugText, { color: theme.subtext }]}>Verified: {emailVerified ? 'Yes' : 'No'}</Text>
+        <Text style={[styles.debugText, { color: theme.subtext }]}>Checks: {autoCheckCount}</Text>
       </View>
     </ScrollView>
   );
@@ -236,25 +240,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
-    color: '#2b3d51',
   },
   message: {
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 8,
-    color: '#666',
   },
   email: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#3da49a',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -262,24 +262,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 16,
-    color: '#666',
     lineHeight: 20,
   },
   note: {
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 16,
-    color: '#ff6b35',
     fontStyle: 'italic',
   },
   debugInfo: {
     fontSize: 12,
     textAlign: 'center',
     marginBottom: 24,
-    color: '#999',
   },
   button: {
-    backgroundColor: '#3da49a',
     padding: 16,
     borderRadius: 10,
     alignItems: 'center',
@@ -301,10 +297,8 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: '#3da49a',
   },
   secondaryButtonText: {
-    color: '#3da49a',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -315,34 +309,29 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   linkButtonText: {
-    color: '#666',
     fontSize: 14,
   },
   debugSection: {
     marginTop: 20,
     padding: 16,
-    backgroundColor: '#fff',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
     width: '100%',
   },
   debugTitle: {
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#666',
   },
   debugText: {
     fontSize: 12,
-    color: '#888',
     marginBottom: 4,
   },
 
   // Accessibility Styles
   highContrastBorder: {
     borderWidth: 2,
-    borderColor: '#FF0000',
+    borderColor: '#4AADA3',
   },
   largerTitle: {
     fontSize: 28,

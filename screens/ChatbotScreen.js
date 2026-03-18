@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Svg, { Rect, Circle, Path, Line } from "react-native-svg";
 import { chatWithRafiki } from "../services/chatService";
 import { useAccessibility } from "../context/AccessibilityContext";
+import { useTheme } from "../context/ThemeContext";
 
 // ── Design tokens (consistent across all screens) ───────────────
 const COLORS = {
@@ -107,6 +108,7 @@ export default function ChatbotScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const { highContrast, largerText } = useAccessibility();
+  const { theme, isDark } = useTheme();
   const flatListRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -208,15 +210,17 @@ export default function ChatbotScreen({ navigation }) {
       >
         {/* Bot avatar with SVG icon */}
         {!isUser && (
-          <View style={styles.botAvatar}>
-            <RafikiBotIcon size={18} color={COLORS.primary} />
+          <View style={[styles.botAvatar, { backgroundColor: theme.primaryLight }]}>
+            <RafikiBotIcon size={18} color={theme.primary} />
           </View>
         )}
 
         <View
           style={[
             styles.bubble,
-            isUser ? styles.userBubble : styles.botBubble,
+            isUser
+              ? [styles.userBubble, { backgroundColor: theme.primary, shadowColor: theme.shadow }]
+              : [styles.botBubble, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }],
             highContrast && styles.highContrastBubble,
           ]}
           accessible={true}
@@ -226,7 +230,9 @@ export default function ChatbotScreen({ navigation }) {
           <Text
             style={[
               styles.bubbleText,
-              isUser ? styles.userBubbleText : styles.botBubbleText,
+              isUser
+                ? [styles.userBubbleText, { color: theme.textOnPrimary }]
+                : [styles.botBubbleText, { color: theme.text }],
               largerText && styles.largerMessageText,
             ]}
           >
@@ -241,34 +247,34 @@ export default function ChatbotScreen({ navigation }) {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         {/* ── Header ──────────────────────────────────────────── */}
-        <View style={styles.header}>
-          <StatusBar
-            translucent
-            backgroundColor={COLORS.primary}
+      <View style={[styles.header, { backgroundColor: theme.headerBackground }]}>
+        <StatusBar
+          translucent
+          backgroundColor={theme.primary}
             barStyle="light-content"
           />
           <SafeAreaView>
             <View style={styles.headerContent}>
               <TouchableOpacity
-                style={[styles.headerIconBtn, highContrast && styles.highContrastBubble]}
+                style={[styles.headerIconBtn, { backgroundColor: theme.headerIconBackground }, highContrast && styles.highContrastBubble]}
                 onPress={() => {
                   if (navigation.canGoBack()) navigation.goBack();
-                  else navigation.navigate("Home");
+                  else navigation.navigate("Profile");
                 }}
                 accessibilityLabel="Go back"
                 accessibilityRole="button"
                 accessibilityHint="Returns to previous screen"
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="arrow-back" size={22} color={COLORS.textOnPrimary} />
+                <Ionicons name="arrow-back" size={22} color={theme.headerText} />
               </TouchableOpacity>
 
               {/* Bot identity — SVG icon in header */}
               <View style={styles.headerCenter}>
-                <View style={styles.headerAvatarCircle}>
+                <View style={[styles.headerAvatarCircle, { backgroundColor: theme.headerIconBackground }]}>
                   <RafikiBotIcon size={17} onDark />
                 </View>
-                <Text style={[styles.headerTitle, largerText && styles.largerHeaderTitle]}>
+                <Text style={[styles.headerTitle, { color: theme.headerText }, largerText && styles.largerHeaderTitle]}>
                   Rafiki Chatbot
                 </Text>
               </View>
@@ -284,7 +290,7 @@ export default function ChatbotScreen({ navigation }) {
           style={styles.background}
           resizeMode="cover"
         >
-          <View style={styles.overlay} />
+          <View style={[styles.overlay, { backgroundColor: theme.overlay }]} />
 
           <KeyboardAvoidingView
             style={{ flex: 1 }}
@@ -318,11 +324,11 @@ export default function ChatbotScreen({ navigation }) {
                 accessibilityRole="status"
               >
                 <View style={styles.botAvatar}>
-                  <RafikiBotIcon size={18} color={COLORS.primary} />
+                  <RafikiBotIcon size={18} color={theme.primary} />
                 </View>
-                <View style={styles.typingBubble}>
-                  <ActivityIndicator size="small" color={COLORS.primary} />
-                  <Text style={[styles.loadingText, largerText && styles.largerLoadingText]}>
+                <View style={[styles.typingBubble, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <ActivityIndicator size="small" color={theme.primary} />
+                  <Text style={[styles.loadingText, { color: theme.subtext }, largerText && styles.largerLoadingText]}>
                     Rafiki is thinking…
                   </Text>
                 </View>
@@ -333,6 +339,7 @@ export default function ChatbotScreen({ navigation }) {
             <View
               style={[
                 styles.inputBar,
+                { backgroundColor: isDark ? theme.card : COLORS.inputBarBg, borderTopColor: theme.border },
                 {
                   marginBottom:
                     keyboardOffset > 0
@@ -347,13 +354,14 @@ export default function ChatbotScreen({ navigation }) {
                 ref={inputRef}
                 style={[
                   styles.input,
+                  { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text },
                   largerText && styles.largerInputText,
                   highContrast && styles.highContrastInput,
                 ]}
                 value={input}
                 onChangeText={setInput}
                 placeholder="Share what's on your mind…"
-                placeholderTextColor={COLORS.textSoft}
+                placeholderTextColor={theme.subtext}
                 onSubmitEditing={sendMessage}
                 returnKeyType="send"
                 editable={!loading}
@@ -365,6 +373,10 @@ export default function ChatbotScreen({ navigation }) {
               <TouchableOpacity
                 style={[
                   styles.sendBtn,
+                  {
+                    backgroundColor: !input.trim() || loading ? theme.secondaryCard : theme.primary,
+                    shadowColor: theme.primary,
+                  },
                   (!input.trim() || loading) && styles.sendBtnDisabled,
                 ]}
                 onPress={sendMessage}
@@ -380,7 +392,7 @@ export default function ChatbotScreen({ navigation }) {
                   name="send"
                   size={18}
                   color={
-                    !input.trim() || loading ? COLORS.textSoft : COLORS.textOnPrimary
+                  !input.trim() || loading ? theme.subtext : theme.textOnPrimary
                   }
                 />
               </TouchableOpacity>

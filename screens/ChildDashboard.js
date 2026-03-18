@@ -16,6 +16,7 @@ import * as Speech from "expo-speech";
 import { useSymbols } from "../context/SymbolsContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useAccessibility } from "../context/AccessibilityContext";
+import { useTheme } from "../context/ThemeContext";
 
 // ── Design tokens (consistent with LoginScreen & RoleSelectionScreen) ──
 const COLORS = {
@@ -48,6 +49,7 @@ export default function ChildDashboard({ navigation }) {
   const [childVoice, setChildVoice] = useState(null);
   const [speakingId, setSpeakingId] = useState(null); // visual feedback on tap
   const { highContrast, largerText } = useAccessibility();
+  const { theme } = useTheme();
 
   // ── Voice loading (unchanged) ────────────────────────────────
   useEffect(() => {
@@ -112,6 +114,11 @@ export default function ChildDashboard({ navigation }) {
       <TouchableOpacity
         style={[
           styles.symbolCard,
+          {
+            backgroundColor: theme.card,
+            shadowColor: theme.shadow,
+            borderColor: isSpeaking ? theme.primary : theme.border,
+          },
           isSpeaking && styles.symbolCardActive,
           highContrast && styles.highContrastBorder,
         ]}
@@ -123,26 +130,33 @@ export default function ChildDashboard({ navigation }) {
       >
         {/* Image area */}
         {item.image ? (
-          <Image source={{ uri: item.image }} style={styles.image} />
+          <Image source={{ uri: item.image }} style={[styles.image, { backgroundColor: theme.primaryLight }]} />
         ) : (
-          <View style={styles.imagePlaceholder}>
+          <View style={[styles.imagePlaceholder, { backgroundColor: theme.primaryLight }]}>
             <Text style={styles.imagePlaceholderText}>🖼️</Text>
           </View>
         )}
 
         {/* Label strip */}
-        <View style={[styles.labelStrip, isSpeaking && styles.labelStripActive]}>
+        <View
+          style={[
+            styles.labelStrip,
+            { backgroundColor: isSpeaking ? theme.primary : theme.secondaryCard },
+            isSpeaking && styles.labelStripActive,
+          ]}
+        >
           {isSpeaking && (
             <Ionicons
               name="volume-high"
               size={14}
-              color={COLORS.textOnPrimary}
+              color={theme.textOnPrimary}
               style={{ marginRight: 4 }}
             />
           )}
           <Text
             style={[
               styles.label,
+              { color: isSpeaking ? theme.textOnPrimary : theme.text },
               isSpeaking && styles.labelActive,
               largerText && styles.largerLabel,
             ]}
@@ -159,26 +173,26 @@ export default function ChildDashboard({ navigation }) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.headerBackground }]}>
         <StatusBar
           translucent
-          backgroundColor={COLORS.primary}
+          backgroundColor={theme.primary}
           barStyle="light-content"
         />
         <SafeAreaView>
           <View style={styles.headerContent}>
             <TouchableOpacity
-              style={[styles.headerBack, highContrast && styles.highContrastBorder]}
+              style={[styles.headerBack, { backgroundColor: theme.headerIconBackground }, highContrast && styles.highContrastBorder]}
               onPress={() => navigation.goBack()}
               accessibilityLabel="Go back"
               accessibilityRole="button"
               accessibilityHint="Returns to previous screen"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="arrow-back" size={22} color={COLORS.textOnPrimary} />
+              <Ionicons name="arrow-back" size={22} color={theme.headerText} />
             </TouchableOpacity>
 
-            <Text style={[styles.headerTitle, largerText && styles.largerHeaderTitle]}>
+            <Text style={[styles.headerTitle, { color: theme.headerText }, largerText && styles.largerHeaderTitle]}>
               Tap to Speak
             </Text>
 
@@ -196,16 +210,16 @@ export default function ChildDashboard({ navigation }) {
         style={styles.background}
         resizeMode="cover"
       >
-        <View style={styles.overlay} />
+        <View style={[styles.overlay, { backgroundColor: theme.overlay }]} />
 
         {symbols.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <View style={styles.emptyCard}>
+            <View style={[styles.emptyCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
               <Text style={styles.emptyIcon}>🗂️</Text>
-              <Text style={[styles.empty, largerText && styles.largerEmpty]}>
+              <Text style={[styles.empty, { color: theme.text }, largerText && styles.largerEmpty]}>
                 No symbols yet
               </Text>
-              <Text style={styles.emptyHint}>
+              <Text style={[styles.emptyHint, { color: theme.subtext }]}>
                 Ask your caregiver to add some!
               </Text>
             </View>
@@ -286,21 +300,17 @@ const styles = StyleSheet.create({
   symbolCard: {
     flex: 1,
     marginHorizontal: 6,
-    backgroundColor: COLORS.card,
     borderRadius: RADIUS.lg,
     alignItems: "center",
     overflow: "hidden",
-    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
     minHeight: 140, // large tap target
   },
   symbolCardActive: {
-    borderColor: COLORS.primary,
     shadowColor: COLORS.primary,
     shadowOpacity: 0.22,
     shadowRadius: 10,
@@ -312,12 +322,10 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 110,
     resizeMode: "contain",   // show full image, no cropping
-    backgroundColor: COLORS.primaryLight, // fill letterbox gaps with soft teal
   },
   imagePlaceholder: {
     width: "100%",
     height: 110,
-    backgroundColor: COLORS.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -328,7 +336,6 @@ const styles = StyleSheet.create({
   // ── Label strip ───────────────────────────────────────────────
   labelStrip: {
     width: "100%",
-    backgroundColor: COLORS.labelBg,
     paddingVertical: 9,
     paddingHorizontal: 8,
     flexDirection: "row",
@@ -342,7 +349,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.text,
     textAlign: "center",
     flexShrink: 1,
   },

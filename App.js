@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { onAuthStateChanged } from "firebase/auth";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { auth, is2FAEnabled } from "./firebaseConfig";
+import { ensureUserProfile } from "./services/userService";
 
 // Screens
 import LoginScreen from "./screens/LoginScreen";
@@ -29,6 +30,7 @@ import BottomNavigation from "./components/BottomNavigation";
 import { SymbolsProvider } from "./context/SymbolsContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AccessibilityProvider } from "./context/AccessibilityContext";
+import { useTheme } from "./context/ThemeContext";
 
 const Stack = createNativeStackNavigator();
 
@@ -152,6 +154,7 @@ function EmailVerificationNavigator({ user, onVerificationComplete }) {
 }
 
 function AppContent() {
+  const { theme, isThemeLoaded } = useTheme();
   const [user, setUser] = useState(null);
   const [emailVerified, setEmailVerified] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
@@ -168,6 +171,14 @@ function AppContent() {
       
       setUser(user);
       setEmailVerified(user ? user.emailVerified : false);
+
+      if (user) {
+        try {
+          await ensureUserProfile(user);
+        } catch (profileError) {
+          console.error("Failed to sync user profile:", profileError);
+        }
+      }
       
       if (user && user.emailVerified) {
         console.log('🔐 Checking if 2FA is required...');
@@ -197,11 +208,11 @@ function AppContent() {
   }, []);
 
   // Show loading spinner while checking auth state or 2FA status
-  if (loadingAuth || checking2FA) {
+  if (!isThemeLoaded || loadingAuth || checking2FA) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3da49a" />
-        <Text style={styles.loadingText}>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+        <Text style={[styles.loadingText, { color: theme.primary }]}>
           {checking2FA ? "Checking security settings..." : "Loading Rafiki Assist..."}
         </Text>
       </View>

@@ -18,6 +18,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useSymbols } from "../context/SymbolsContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useAccessibility } from "../context/AccessibilityContext";
+import { useTheme } from "../context/ThemeContext";
 
 // ── Design tokens (consistent across all screens) ───────────────
 const COLORS = {
@@ -57,6 +58,7 @@ export default function ManageSymbolsScreen({ navigation }) {
   const [newImage, setNewImage] = useState(null);
   const [labelFocused, setLabelFocused] = useState(false);
   const { highContrast, largerText } = useAccessibility();
+  const { theme } = useTheme();
 
   const dynHeaderTitle = largerText ? 20 : 18;
   const dynLabel = largerText ? 20 : 16;
@@ -108,25 +110,34 @@ export default function ManageSymbolsScreen({ navigation }) {
 
   // ── Symbol row ───────────────────────────────────────────────
   const renderItem = ({ item }) => (
-    <View style={[styles.symbolRow, highContrast && styles.highContrastBorder]}>
+    <View
+      style={[
+        styles.symbolRow,
+        {
+          backgroundColor: theme.card,
+          shadowColor: theme.shadow,
+        },
+        highContrast && styles.highContrastBorder,
+      ]}
+    >
       {/* Thumbnail */}
       {item.image ? (
         <Image
           source={{ uri: item.image }}
-          style={styles.symbolImage}
+          style={[styles.symbolImage, { backgroundColor: theme.primaryLight }]}
           resizeMode="contain"
           accessible={true}
           accessibilityLabel={`Symbol image for ${item.label}`}
         />
       ) : (
-        <View style={styles.symbolImagePlaceholder}>
-          <Ionicons name="image-outline" size={20} color={COLORS.textSoft} />
+        <View style={[styles.symbolImagePlaceholder, { backgroundColor: theme.primaryLight }]}>
+          <Ionicons name="image-outline" size={20} color={theme.subtext} />
         </View>
       )}
 
       {/* Label */}
       <Text
-        style={[styles.symbolLabel, { fontSize: dynLabel }]}
+        style={[styles.symbolLabel, { fontSize: dynLabel, color: theme.text }]}
         numberOfLines={1}
       >
         {item.label}
@@ -135,26 +146,26 @@ export default function ManageSymbolsScreen({ navigation }) {
       {/* Action buttons */}
       <TouchableOpacity
         onPress={() => handleUpdate(item.id)}
-        style={styles.updateBtn}
+        style={[styles.updateBtn, { backgroundColor: theme.secondaryCard }]}
         accessibilityLabel={`Update ${item.label}`}
         accessibilityRole="button"
         accessibilityHint="Opens dialog to update symbol label"
         activeOpacity={0.8}
       >
-        <Ionicons name="pencil-outline" size={14} color={COLORS.updateText} />
-        <Text style={[styles.updateBtnText, { fontSize: dynBtn }]}>Edit</Text>
+        <Ionicons name="pencil-outline" size={14} color={theme.primary} />
+        <Text style={[styles.updateBtnText, { fontSize: dynBtn, color: theme.primary }]}>Edit</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         onPress={() => handleDelete(item.id)}
-        style={styles.deleteBtn}
+        style={[styles.deleteBtn, { backgroundColor: theme.dangerBg }]}
         accessibilityLabel={`Delete ${item.label}`}
         accessibilityRole="button"
         accessibilityHint="Deletes this symbol permanently"
         activeOpacity={0.8}
       >
-        <Ionicons name="trash-outline" size={14} color={COLORS.deleteText} />
-        <Text style={[styles.deleteBtnText, { fontSize: dynBtn }]}>Delete</Text>
+        <Ionicons name="trash-outline" size={14} color={theme.danger} />
+        <Text style={[styles.deleteBtnText, { fontSize: dynBtn, color: theme.danger }]}>Delete</Text>
       </TouchableOpacity>
     </View>
   );
@@ -164,29 +175,29 @@ export default function ManageSymbolsScreen({ navigation }) {
   return (
     <View style={styles.container}>
       {/* ── Header ──────────────────────────────────────────────── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.headerBackground }]}>
         <StatusBar
           translucent
-          backgroundColor={COLORS.primary}
+          backgroundColor={theme.primary}
           barStyle="light-content"
         />
         <SafeAreaView>
           <View style={styles.headerContent}>
             <TouchableOpacity
-              style={[styles.headerIconBtn, highContrast && styles.highContrastBorder]}
+              style={[styles.headerIconBtn, { backgroundColor: theme.headerIconBackground }, highContrast && styles.highContrastBorder]}
               onPress={() => {
                 if (navigation.canGoBack()) navigation.goBack();
-                else navigation.navigate("Home");
+                else navigation.navigate("Profile");
               }}
               accessibilityLabel="Go back"
               accessibilityRole="button"
               accessibilityHint="Returns to previous screen"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="arrow-back" size={22} color={COLORS.textOnPrimary} />
+              <Ionicons name="arrow-back" size={22} color={theme.headerText} />
             </TouchableOpacity>
 
-            <Text style={[styles.headerTitle, { fontSize: dynHeaderTitle }]}>
+            <Text style={[styles.headerTitle, { fontSize: dynHeaderTitle, color: theme.headerText }]}>
               Symbol Manager
             </Text>
 
@@ -201,26 +212,27 @@ export default function ManageSymbolsScreen({ navigation }) {
         style={styles.background}
         resizeMode="cover"
       >
-        <View style={styles.overlay} />
+        <View style={[styles.overlay, { backgroundColor: theme.overlay }]} />
 
         <View style={styles.content}>
 
           {/* ── Add symbol card ───────────────────────────────── */}
-          <View style={styles.addCard}>
-            <Text style={styles.addCardTitle}>Add New Symbol</Text>
+          <View style={[styles.addCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+            <Text style={[styles.addCardTitle, { color: theme.text }]}>Add New Symbol</Text>
 
             {/* Label input */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Label</Text>
+              <Text style={[styles.fieldLabel, { color: theme.subtext }]}>Label</Text>
               <TextInput
                 style={[
                   styles.input,
                   labelFocused && styles.inputFocused,
+                  { backgroundColor: theme.inputBackground, borderColor: labelFocused ? theme.primary : theme.border, color: theme.text },
                   { fontSize: dynInput },
                   highContrast && styles.highContrastInput,
                 ]}
                 placeholder="e.g. Water, Toilet, Happy"
-                placeholderTextColor={COLORS.textSoft}
+                placeholderTextColor={theme.subtext}
                 value={newLabel}
                 onChangeText={setNewLabel}
                 onFocus={() => setLabelFocused(true)}
@@ -248,7 +260,7 @@ export default function ManageSymbolsScreen({ navigation }) {
                 <Ionicons
                   name={hasImageSelected ? "checkmark-circle-outline" : "image-outline"}
                   size={16}
-                  color={hasImageSelected ? COLORS.primary : COLORS.pickText}
+                  color={hasImageSelected ? theme.primary : COLORS.pickText}
                 />
                 <Text style={[
                   styles.pickBtnText,
@@ -272,6 +284,10 @@ export default function ManageSymbolsScreen({ navigation }) {
               <TouchableOpacity
                 style={[
                   styles.uploadBtn,
+                  {
+                    backgroundColor: !newLabel.trim() || !hasImageSelected ? theme.secondaryCard : theme.primary,
+                    shadowColor: theme.primary,
+                  },
                   (!newLabel.trim() || !hasImageSelected) && styles.uploadBtnDisabled,
                   highContrast && styles.highContrastBorder,
                 ]}
@@ -282,8 +298,22 @@ export default function ManageSymbolsScreen({ navigation }) {
                 accessibilityHint="Adds the new symbol with label and image"
                 activeOpacity={0.85}
               >
-                <Ionicons name="add-circle-outline" size={16} color={COLORS.textOnPrimary} />
-                <Text style={[styles.uploadBtnText, { fontSize: dynBtn }]}>Add</Text>
+                <Ionicons
+                  name="add-circle-outline"
+                  size={16}
+                  color={!newLabel.trim() || !hasImageSelected ? theme.subtext : theme.textOnPrimary}
+                />
+                <Text
+                  style={[
+                    styles.uploadBtnText,
+                    {
+                      fontSize: dynBtn,
+                      color: !newLabel.trim() || !hasImageSelected ? theme.subtext : theme.textOnPrimary,
+                    },
+                  ]}
+                >
+                  Add
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -292,9 +322,9 @@ export default function ManageSymbolsScreen({ navigation }) {
           {symbols.length === 0 ? (
             <View style={styles.emptyContainer}>
               <View style={styles.emptyCard}>
-                <Ionicons name="grid-outline" size={40} color={COLORS.primary} style={{ marginBottom: 10 }} />
-                <Text style={styles.emptyText}>No symbols yet</Text>
-                <Text style={styles.emptyHint}>Add your first symbol above</Text>
+                <Ionicons name="grid-outline" size={40} color={theme.primary} style={{ marginBottom: 10 }} />
+                <Text style={[styles.emptyText, { color: theme.text }]}>No symbols yet</Text>
+                <Text style={[styles.emptyHint, { color: theme.subtext }]}>Add your first symbol above</Text>
               </View>
             </View>
           ) : (
@@ -396,8 +426,11 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   inputFocused: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.card,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 2,
   },
   highContrastInput: {
     borderWidth: 2,

@@ -51,13 +51,14 @@ const COLORS = {
 const RADIUS = { sm: 10, md: 14, lg: 18, xl: 24, full: 999 };
 
 // ── Section wrapper ───────────────────────────────────────────────
-const Section = ({ title, children, largerText, highContrast }) => (
+const Section = ({ title, children, largerText, highContrast, theme }) => (
   <View style={[
     sectionStyles.card,
+    { backgroundColor: theme.card, shadowColor: theme.shadow },
     highContrast && { borderWidth: 2, borderColor: COLORS.primary },
   ]}>
     {title ? (
-      <Text style={[sectionStyles.title, largerText && { fontSize: 18 }]}>{title}</Text>
+      <Text style={[sectionStyles.title, { color: theme.subtext }, largerText && { fontSize: 18 }]}>{title}</Text>
     ) : null}
     {children}
   </View>
@@ -87,21 +88,21 @@ const sectionStyles = StyleSheet.create({
 });
 
 // ── Row item ──────────────────────────────────────────────────────
-const RowItem = ({ icon, iconColor, title, subtitle, right, onPress, last, largerText }) => {
+const RowItem = ({ icon, iconColor, title, subtitle, right, onPress, last, largerText, theme }) => {
   const Wrapper = onPress ? TouchableOpacity : View;
   return (
     <Wrapper
-      style={[rowStyles.row, last && rowStyles.rowLast]}
+      style={[rowStyles.row, { borderBottomColor: theme.border }, last && rowStyles.rowLast]}
       onPress={onPress}
       activeOpacity={0.75}
     >
-      <View style={rowStyles.iconCircle}>
+      <View style={[rowStyles.iconCircle, { backgroundColor: theme.primaryLight }]}>
         <Ionicons name={icon} size={18} color={iconColor || COLORS.primary} />
       </View>
       <View style={rowStyles.textBlock}>
-        <Text style={[rowStyles.title, largerText && { fontSize: 17 }]}>{title}</Text>
+        <Text style={[rowStyles.title, { color: theme.text }, largerText && { fontSize: 17 }]}>{title}</Text>
         {subtitle ? (
-          <Text style={[rowStyles.subtitle, largerText && { fontSize: 13 }]}>{subtitle}</Text>
+          <Text style={[rowStyles.subtitle, { color: theme.subtext }, largerText && { fontSize: 13 }]}>{subtitle}</Text>
         ) : null}
       </View>
       {right}
@@ -261,7 +262,6 @@ export default function ProfileScreen({ navigation }) {
     try {
       await AsyncStorage.removeItem("userData");
       await signOut(auth);
-      navigation.replace("Login");
     } catch (error) {
       Alert.alert("Sign out failed", error.message || "Please try again.");
     }
@@ -281,8 +281,8 @@ export default function ProfileScreen({ navigation }) {
   // ── Loading ───────────────────────────────────────────────────
   if (loading) {
     return (
-      <View style={styles.loadingScreen}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={[styles.loadingScreen, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -292,8 +292,8 @@ export default function ProfileScreen({ navigation }) {
   const dynBtnText = largerText ? 16 : 14;
 
   return (
-    <View style={styles.root}>
-      <StatusBar translucent backgroundColor={COLORS.primary} barStyle="light-content" />
+    <View style={[styles.root, { backgroundColor: theme.background }]}>
+      <StatusBar translucent backgroundColor={theme.primary} barStyle="light-content" />
 
       <ScrollView
         style={styles.scroll}
@@ -303,17 +303,17 @@ export default function ProfileScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         {/* ── Profile header ──────────────────────────────────── */}
-        <View style={styles.profileHeader}>
+        <View style={[styles.profileHeader, { backgroundColor: theme.headerBackground }]}>
           {/* Back button */}
           <TouchableOpacity
-            style={[styles.headerBackBtn, highContrast && styles.highContrastBorder]}
+            style={[styles.headerBackBtn, { backgroundColor: theme.headerIconBackground }, highContrast && styles.highContrastBorder]}
             onPress={() => navigation.goBack()}
             accessibilityLabel="Go back"
             accessibilityRole="button"
             accessibilityHint="Returns to previous screen"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="arrow-back" size={22} color={COLORS.textOnPrimary} />
+            <Ionicons name="arrow-back" size={22} color={theme.headerText} />
           </TouchableOpacity>
 
           {/* Avatar */}
@@ -331,29 +331,29 @@ export default function ProfileScreen({ navigation }) {
               accessibilityLabel="User profile picture"
             />
             {/* Camera badge */}
-            <View style={styles.cameraBadge}>
-              <Ionicons name="pencil" size={10} color={COLORS.textOnPrimary} />
+            <View style={[styles.cameraBadge, { backgroundColor: theme.primaryDark, borderColor: theme.textOnPrimary }]}>
+              <Ionicons name="pencil" size={10} color={theme.textOnPrimary} />
             </View>
           </TouchableOpacity>
 
-          <Text style={[styles.nameText, { fontSize: dynName }]}>
+          <Text style={[styles.nameText, { fontSize: dynName, color: theme.headerText }]}>
             {displayName || user?.displayName || "Rafiki User"}
           </Text>
-          <Text style={[styles.emailText, { fontSize: dynEmail }]}>
+          <Text style={[styles.emailText, { fontSize: dynEmail, color: "rgba(255,255,255,0.8)" }]}>
             {user?.email || "No email available"}
           </Text>
 
           {/* Edit profile pill */}
           <TouchableOpacity
-            style={[styles.editBtn, highContrast && styles.highContrastBorder]}
+            style={[styles.editBtn, { backgroundColor: theme.card }, highContrast && styles.highContrastBorder]}
             onPress={handleEditProfile}
             accessibilityLabel="Edit profile"
             accessibilityRole="button"
             accessibilityHint="Opens screen to edit your profile information"
             activeOpacity={0.85}
           >
-            <Ionicons name="pencil-outline" size={14} color={COLORS.primary} />
-            <Text style={[styles.editBtnText, { fontSize: dynBtnText }]}>Edit Profile</Text>
+            <Ionicons name="pencil-outline" size={14} color={theme.primary} />
+            <Text style={[styles.editBtnText, { color: theme.primary, fontSize: dynBtnText }]}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
 
@@ -363,48 +363,48 @@ export default function ProfileScreen({ navigation }) {
           {/* Quick stats row */}
           <View style={styles.statsRow}>
             {/* Symbol count */}
-            <View style={[styles.quickStat, highContrast && styles.highContrastBorder]}>
-              <Text style={[styles.quickStatValue, largerText && { fontSize: 28 }]}>
+            <View style={[styles.quickStat, { backgroundColor: theme.card, shadowColor: theme.shadow }, highContrast && styles.highContrastBorder]}>
+              <Text style={[styles.quickStatValue, { color: theme.text }, largerText && { fontSize: 28 }]}>
                 {symbols?.length ?? 0}
               </Text>
-              <Text style={[styles.quickStatLabel, largerText && { fontSize: 13 }]}>
+              <Text style={[styles.quickStatLabel, { color: theme.subtext }, largerText && { fontSize: 13 }]}>
                 Symbols
               </Text>
             </View>
 
             {/* Manage Symbols shortcut */}
             <TouchableOpacity
-              style={[styles.quickAction, highContrast && styles.highContrastBorder]}
+              style={[styles.quickAction, { backgroundColor: theme.card, shadowColor: theme.shadow }, highContrast && styles.highContrastBorder]}
               onPress={handleManageSymbols}
               accessibilityLabel="Manage symbols"
               accessibilityRole="button"
               accessibilityHint="Opens screen to add, edit, or delete communication symbols"
               activeOpacity={0.85}
             >
-              <Ionicons name="images-outline" size={24} color={COLORS.primary} />
-              <Text style={[styles.quickActionLabel, largerText && { fontSize: 13 }]}>
+              <Ionicons name="images-outline" size={24} color={theme.primary} />
+              <Text style={[styles.quickActionLabel, { color: theme.subtext }, largerText && { fontSize: 13 }]}>
                 Manage
               </Text>
             </TouchableOpacity>
 
             {/* Analytics shortcut */}
             <TouchableOpacity
-              style={[styles.quickAction, highContrast && styles.highContrastBorder]}
+              style={[styles.quickAction, { backgroundColor: theme.card, shadowColor: theme.shadow }, highContrast && styles.highContrastBorder]}
               onPress={handleSymbolAnalytics}
               accessibilityLabel="View symbol analytics"
               accessibilityRole="button"
               accessibilityHint="Opens screen showing symbol usage statistics"
               activeOpacity={0.85}
             >
-              <Ionicons name="analytics-outline" size={24} color={COLORS.primary} />
-              <Text style={[styles.quickActionLabel, largerText && { fontSize: 13 }]}>
+              <Ionicons name="analytics-outline" size={24} color={theme.primary} />
+              <Text style={[styles.quickActionLabel, { color: theme.subtext }, largerText && { fontSize: 13 }]}>
                 Analytics
               </Text>
             </TouchableOpacity>
           </View>
 
           {/* ── Security ────────────────────────────────────── */}
-          <Section title="Security" largerText={largerText} highContrast={highContrast}>
+          <Section title="Security" largerText={largerText} highContrast={highContrast} theme={theme}>
             {/* 2FA row */}
             <RowItem
               icon={get2FAIcon()}
@@ -412,10 +412,11 @@ export default function ProfileScreen({ navigation }) {
               title="Google Authenticator"
               subtitle={get2FAStatusText()}
               largerText={largerText}
+              theme={theme}
               onPress={handle2FAPress}
               right={
                 twoFALoading ? (
-                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <ActivityIndicator size="small" color={theme.primary} />
                 ) : (
                   <View style={[
                     styles.statusPill,
@@ -438,27 +439,29 @@ export default function ProfileScreen({ navigation }) {
               title="Change Password"
               subtitle="Update your account password"
               largerText={largerText}
+              theme={theme}
               onPress={handleChangePassword}
               last
-              right={<Ionicons name="chevron-forward" size={18} color={COLORS.textSoft} />}
+              right={<Ionicons name="chevron-forward" size={18} color={theme.subtext} />}
             />
           </Section>
 
           {/* ── Appearance ──────────────────────────────────── */}
-          <Section title="Appearance" largerText={largerText} highContrast={highContrast}>
+          <Section title="Appearance" largerText={largerText} highContrast={highContrast} theme={theme}>
             <RowItem
               icon={isDark ? "moon" : "sunny-outline"}
               iconColor={isDark ? "#7C5CBF" : "#F5A623"}
               title="Dark Mode"
               subtitle={isDark ? "Enabled" : "Disabled"}
               largerText={largerText}
+              theme={theme}
               last
               right={
                 <Switch
                   value={isDark}
                   onValueChange={toggleTheme}
-                  trackColor={{ false: COLORS.border, true: COLORS.switchActive }}
-                  thumbColor={COLORS.card}
+                  trackColor={{ false: theme.border, true: theme.primary }}
+                  thumbColor={theme.card}
                   accessibilityLabel="Dark mode toggle switch"
                   accessibilityRole="switch"
                   accessibilityState={{ checked: isDark }}
@@ -469,18 +472,19 @@ export default function ProfileScreen({ navigation }) {
           </Section>
 
           {/* ── Accessibility ────────────────────────────────── */}
-          <Section title="Accessibility" largerText={largerText} highContrast={highContrast}>
+          <Section title="Accessibility" largerText={largerText} highContrast={highContrast} theme={theme}>
             <RowItem
               icon="contrast-outline"
               title="High Contrast"
               subtitle="Enhanced visibility for low vision"
               largerText={largerText}
+              theme={theme}
               right={
                 <Switch
                   value={highContrast}
                   onValueChange={toggleHighContrast}
-                  trackColor={{ false: COLORS.border, true: COLORS.switchActive }}
-                  thumbColor={COLORS.card}
+                  trackColor={{ false: theme.border, true: theme.primary }}
+                  thumbColor={theme.card}
                   accessibilityLabel="High contrast mode toggle"
                   accessibilityRole="switch"
                   accessibilityState={{ checked: highContrast }}
@@ -493,13 +497,14 @@ export default function ProfileScreen({ navigation }) {
               title="Larger Text"
               subtitle="Increase text size throughout app"
               largerText={largerText}
+              theme={theme}
               last
               right={
                 <Switch
                   value={largerText}
                   onValueChange={toggleLargerText}
-                  trackColor={{ false: COLORS.border, true: COLORS.switchActive }}
-                  thumbColor={COLORS.card}
+                  trackColor={{ false: theme.border, true: theme.primary }}
+                  thumbColor={theme.card}
                   accessibilityLabel="Larger text toggle"
                   accessibilityRole="switch"
                   accessibilityState={{ checked: largerText }}
@@ -511,15 +516,15 @@ export default function ProfileScreen({ navigation }) {
 
           {/* ── Sign out ─────────────────────────────────────── */}
           <TouchableOpacity
-            style={[styles.signOutBtn, highContrast && styles.highContrastBorder]}
+            style={[styles.signOutBtn, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }, highContrast && styles.highContrastBorder]}
             onPress={handleSignOut}
             accessibilityLabel="Sign out"
             accessibilityRole="button"
             accessibilityHint="Signs you out of your account"
             activeOpacity={0.85}
           >
-            <Ionicons name="log-out-outline" size={18} color={COLORS.textSoft} />
-            <Text style={[styles.signOutText, largerText && { fontSize: 16 }]}>Sign Out</Text>
+            <Ionicons name="log-out-outline" size={18} color={theme.subtext} />
+            <Text style={[styles.signOutText, { color: theme.subtext }, largerText && { fontSize: 16 }]}>Sign Out</Text>
           </TouchableOpacity>
 
         </View>

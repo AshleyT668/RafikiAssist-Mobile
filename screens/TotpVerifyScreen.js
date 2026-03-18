@@ -2,8 +2,10 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { auth } from "../firebaseConfig";
+import { useTheme } from "../context/ThemeContext";
 
 export default function TotpVerifyScreen({ navigation }) {
+  const { theme } = useTheme();
   const [code, setCode] = useState("");
 
   const handleVerify = async () => {
@@ -22,10 +24,10 @@ export default function TotpVerifyScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Enter code from Authenticator App</Text>
-      <TextInput style={styles.input} value={code} onChangeText={setCode} keyboardType="number-pad" />
-      <TouchableOpacity style={styles.button} onPress={handleVerify}><Text style={styles.buttonText}>Verify</Text></TouchableOpacity>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Text style={[styles.title, { color: theme.text }]}>Enter code from Authenticator App</Text>
+      <TextInput style={[styles.input, { borderColor: theme.border, backgroundColor: theme.inputBackground, color: theme.text }]} value={code} onChangeText={setCode} keyboardType="number-pad" placeholderTextColor={theme.subtext} />
+      <TouchableOpacity style={[styles.button, { backgroundColor: theme.primary }]} onPress={handleVerify}><Text style={[styles.buttonText, { color: theme.textOnPrimary }]}>Verify</Text></TouchableOpacity>
     </View>
   );
 }
@@ -33,7 +35,7 @@ export default function TotpVerifyScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
   title: { fontSize: 18, fontWeight: "bold", marginBottom: 20 },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12, marginVertical: 14, width: "80%" },
-  button: { backgroundColor: "#8c3cb8", padding: 14, borderRadius: 8, width: "80%" },
-  buttonText: { color: "#fff", textAlign: "center", fontWeight: "bold" }
+  input: { borderWidth: 1, borderRadius: 8, padding: 12, marginVertical: 14, width: "80%" },
+  button: { padding: 14, borderRadius: 8, width: "80%" },
+  buttonText: { textAlign: "center", fontWeight: "bold" }
 });

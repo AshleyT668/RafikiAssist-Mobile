@@ -12,10 +12,11 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { signOut, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import { useAccessibility } from "../context/AccessibilityContext";
+import { useTheme } from "../context/ThemeContext";
 
 // ── Design tokens (consistent across all screens) ───────────────
 const COLORS = {
@@ -62,6 +63,7 @@ export default function CaregiverDashboard({ navigation }) {
   const [user, setUser] = useState(null);
   const [profilePic, setProfilePic] = useState(null);
   const { highContrast, largerText } = useAccessibility();
+  const { theme, isDark } = useTheme();
 
   console.log('🔍 [CaregiverDashboard] Accessibility values:', { highContrast, largerText });
 
@@ -70,7 +72,7 @@ export default function CaregiverDashboard({ navigation }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        const userRef = doc(db, "caregivers", currentUser.uid);
+        const userRef = doc(db, "users", currentUser.uid);
         const snap = await getDoc(userRef);
         if (snap.exists()) {
           setProfilePic(snap.data().photoURL || currentUser.photoURL);
@@ -79,15 +81,6 @@ export default function CaregiverDashboard({ navigation }) {
     });
     return unsubscribe;
   }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      navigation.replace("Login");
-    } catch (error) {
-      alert("Failed to sign out. Please try again.");
-    }
-  };
 
   const dynHeaderTitle = largerText ? 20 : 18;
   const dynTitle = largerText ? 30 : 24;
@@ -98,27 +91,27 @@ export default function CaregiverDashboard({ navigation }) {
   return (
     <View style={styles.container}>
       {/* ── Header ────────────────────────────────────────────── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.headerBackground }]}>
         <StatusBar
           translucent
-          backgroundColor={COLORS.primary}
+          backgroundColor={theme.primary}
           barStyle="light-content"
         />
         <SafeAreaView>
           <View style={styles.headerContent}>
             {/* Back */}
             <TouchableOpacity
-              style={[styles.headerIconBtn, highContrast && styles.highContrastBorder]}
+              style={[styles.headerIconBtn, { backgroundColor: theme.headerIconBackground }, highContrast && styles.highContrastBorder]}
               onPress={() => navigation.goBack()}
               accessibilityLabel="Go back"
               accessibilityRole="button"
               accessibilityHint="Returns to previous screen"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="arrow-back" size={22} color={COLORS.textOnPrimary} />
+              <Ionicons name="arrow-back" size={22} color={theme.headerText} />
             </TouchableOpacity>
 
-            <Text style={[styles.headerTitle, { fontSize: dynHeaderTitle }]}>
+            <Text style={[styles.headerTitle, { fontSize: dynHeaderTitle, color: theme.headerText }]}>
               Caregiver Dashboard
             </Text>
 
@@ -151,14 +144,14 @@ export default function CaregiverDashboard({ navigation }) {
         style={styles.background}
         resizeMode="cover"
       >
-        <View style={styles.overlay} />
+        <View style={[styles.overlay, { backgroundColor: theme.overlay }]} />
 
         <View style={styles.content}>
           {/* Greeting */}
-          <Text style={[styles.welcomeTitle, { fontSize: dynTitle }]}>
+          <Text style={[styles.welcomeTitle, { fontSize: dynTitle, color: theme.text }]}>
             Karibu Rafiki Caregiver
           </Text>
-          <Text style={[styles.welcomeSubtitle, { fontSize: dynSubtitle }]}>
+          <Text style={[styles.welcomeSubtitle, { fontSize: dynSubtitle, color: theme.subtext }]}>
             What would you like to do?
           </Text>
 
@@ -166,7 +159,7 @@ export default function CaregiverDashboard({ navigation }) {
           {NAV_ITEMS.map((item) => (
             <TouchableOpacity
               key={item.route}
-              style={[styles.navCard, highContrast && styles.highContrastBorder]}
+              style={[styles.navCard, { backgroundColor: theme.card, shadowColor: theme.shadow }, highContrast && styles.highContrastBorder]}
               onPress={() => navigation.navigate(item.route)}
               accessibilityLabel={item.label}
               accessibilityRole="button"
@@ -174,35 +167,23 @@ export default function CaregiverDashboard({ navigation }) {
               activeOpacity={0.85}
             >
               {/* Icon circle */}
-              <View style={styles.navIconCircle}>
-                <Ionicons name={item.icon} size={22} color={COLORS.primary} />
+              <View style={[styles.navIconCircle, { backgroundColor: theme.primaryLight }]}>
+                <Ionicons name={item.icon} size={22} color={theme.primary} />
               </View>
 
               {/* Label */}
-              <Text style={[styles.navLabel, { fontSize: dynBtnText }]}>
+              <Text style={[styles.navLabel, { fontSize: dynBtnText, color: theme.text }]}>
                 {item.label}
               </Text>
 
               {/* Chevron */}
-              <View style={styles.navChevron}>
-                <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+              <View style={[styles.navChevron, { backgroundColor: theme.primaryLight }]}>
+                <Ionicons name="chevron-forward" size={16} color={theme.primary} />
               </View>
             </TouchableOpacity>
           ))}
 
           {/* Sign out — separated, visually softer */}
-          <TouchableOpacity
-            style={styles.signOutBtn}
-            onPress={handleSignOut}
-            accessibilityLabel="Sign out"
-            accessibilityRole="button"
-            activeOpacity={0.8}
-          >
-            <Ionicons name="log-out-outline" size={16} color={COLORS.textSoft} style={{ marginRight: 6 }} />
-            <Text style={[styles.signOutText, largerText && { fontSize: 16 }]}>
-              Sign Out
-            </Text>
-          </TouchableOpacity>
         </View>
       </ImageBackground>
     </View>

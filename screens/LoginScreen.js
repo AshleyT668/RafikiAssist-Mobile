@@ -6,9 +6,19 @@ import {
   ImageBackground, Animated, Modal,
   ActivityIndicator
 } from "react-native";
+import * as AuthSession from "expo-auth-session";
 import { signInWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth, is2FAEnabled, verifyTOTPLogin } from "../firebaseConfig";
 import { getErrorMessage } from "../utils";
+import { ensureUserProfile } from "../services/userService";
+import { useTheme } from "../context/ThemeContext";
+import {
+  createGoogleAuthRequestConfig,
+  googleDiscovery,
+  hasGoogleAuthConfig,
+  promptGoogleSignIn,
+} from "../services/googleAuthService";
+import { Ionicons } from "@expo/vector-icons";
 
 // ── Design tokens ──────────────────────────────────────────────
 const COLORS = {
@@ -50,6 +60,7 @@ const FONT = {
 // ───────────────────────────────────────────────────────────────
 
 export default function LoginScreen({ navigation, route, on2FASuccess }) {
+  const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [totpCode, setTotpCode] = useState("");
@@ -60,6 +71,13 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
   const [totpError, setTotpError] = useState("");
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleEnabled] = useState(hasGoogleAuthConfig());
+  const [googleRequest, , promptGoogleAsync] = AuthSession.useAuthRequest(
+    createGoogleAuthRequestConfig(),
+    googleDiscovery
+  );
 
   // ── Check for message from signup screen ──────────────────────
   useEffect(() => {
@@ -121,6 +139,7 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      await ensureUserProfile(user, { authProvider: "password" });
 
       if (!user.emailVerified) {
         Alert.alert(
@@ -160,6 +179,25 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    if (!googleEnabled) {
+      Alert.alert(
+        "Google Sign-In Not Configured",
+        "Add your Google OAuth client IDs in app.json before using Google sign-in."
+      );
+      return;
+    }
+
+    setGoogleLoading(true);
+    try {
+      await promptGoogleSignIn(promptGoogleAsync);
+    } catch (error) {
+      Alert.alert("Google Sign-In Failed", getErrorMessage(error));
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   const handleCloseTOTPModal = async () => {
     setShowTOTPModal(false);
     setTotpCode("");
@@ -186,11 +224,12 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
           style={styles.background}
         >
           {/* Soft overlay for readability */}
-          <View style={styles.overlay} />
+          <View style={[styles.overlay, { backgroundColor: theme.overlay }]} />
 
           <Animated.View
             style={[
               styles.card,
+              { backgroundColor: theme.card, shadowColor: theme.shadow },
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
@@ -204,19 +243,20 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
               </View>
             </View>
 
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to Rafiki Assist</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Welcome Back</Text>
+            <Text style={[styles.subtitle, { color: theme.subtext }]}>Sign in to Rafiki Assist</Text>
 
             {/* Email input */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Email</Text>
+              <Text style={[styles.fieldLabel, { color: theme.text }]}>Email</Text>
               <TextInput
                 style={[
                   styles.input,
                   emailFocused && styles.inputFocused,
+                  { borderColor: emailFocused ? theme.primary : theme.border, backgroundColor: theme.inputBackground, color: theme.text, shadowColor: theme.primary },
                 ]}
                 placeholder="your@email.com"
-                placeholderTextColor={COLORS.textSoft}
+                placeholderTextColor={theme.subtext}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -229,25 +269,47 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
 
             {/* Password input */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Password</Text>
-              <TextInput
+              <Text style={[styles.fieldLabel, { color: theme.text }]}>Password</Text>
+              <View
                 style={[
-                  styles.input,
+                  styles.inputRow,
                   passwordFocused && styles.inputFocused,
+                  {
+                    borderColor: passwordFocused ? theme.primary : theme.border,
+                    backgroundColor: theme.inputBackground,
+                    shadowColor: theme.primary,
+                  },
                 ]}
-                placeholder="Enter your password"
-                placeholderTextColor={COLORS.textSoft}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-              />
+              >
+                <TextInput
+                  style={[styles.input, styles.inputInsideRow, { color: theme.text }]}
+                  placeholder="Enter your password"
+                  placeholderTextColor={theme.subtext}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword((visible) => !visible)}
+                  style={styles.eyeButton}
+                  accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                  accessibilityRole="button"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={18}
+                    color={theme.subtext}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Login button */}
             <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
+              style={[styles.button, { backgroundColor: theme.primary }, loading && styles.buttonDisabled]}
               onPress={handleLogin}
               disabled={loading}
               activeOpacity={0.85}
@@ -259,15 +321,35 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
               )}
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={[
+                styles.googleButton,
+                {
+                  backgroundColor: theme.inputBackground,
+                  borderColor: theme.border,
+                },
+                (googleLoading || !googleRequest) && styles.buttonDisabled,
+              ]}
+              onPress={handleGoogleLogin}
+              disabled={googleLoading || !googleRequest}
+              activeOpacity={0.85}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color={theme.text} />
+              ) : (
+                <Text style={[styles.googleButtonText, { color: theme.text }]}>Continue with Google</Text>
+              )}
+            </TouchableOpacity>
+
             {/* Sign-up link */}
             <TouchableOpacity
               onPress={() => navigation.navigate("Signup")}
               style={styles.linkRow}
               activeOpacity={0.7}
             >
-              <Text style={styles.linkText}>
+              <Text style={[styles.linkText, { color: theme.subtext }]}>
                 Don't have an account?{" "}
-                <Text style={styles.linkAccent}>Sign Up</Text>
+                <Text style={[styles.linkAccent, { color: theme.primary }]}>Sign Up</Text>
               </Text>
             </TouchableOpacity>
           </Animated.View>
@@ -454,14 +536,30 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     minHeight: 52, // large tap target
   },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderRadius: RADIUS.sm,
+    minHeight: 52,
+    paddingHorizontal: 16,
+  },
+  inputInsideRow: {
+    flex: 1,
+    borderWidth: 0,
+    backgroundColor: "transparent",
+    paddingHorizontal: 0,
+    minHeight: 0,
+  },
   inputFocused: {
-    borderColor: COLORS.borderFocus,
-    backgroundColor: COLORS.white,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 2,
+  },
+  eyeButton: {
+    paddingLeft: 8,
   },
 
   // ── Primary button ────────────────────────────────────────────
@@ -504,6 +602,21 @@ const styles = StyleSheet.create({
   },
 
   // ── Modal overlay ─────────────────────────────────────────────
+  googleButton: {
+    backgroundColor: COLORS.white,
+    paddingVertical: 16,
+    borderRadius: RADIUS.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+    minHeight: 56,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
+  googleButtonText: {
+    ...FONT.button,
+    color: COLORS.text,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(44, 62, 61, 0.55)",

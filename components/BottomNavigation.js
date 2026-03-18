@@ -3,18 +3,28 @@ import React from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useTheme } from "../context/ThemeContext";
 
 export default function BottomNavigation() {
   const navigation = useNavigation();
+  const { theme } = useTheme();
 
   return (
-    <View style={styles.navBar}>
+    <View
+      style={[
+        styles.navBar,
+        {
+          backgroundColor: theme.navBackground,
+          borderTopColor: theme.navBorder,
+        },
+      ]}
+    >
       {/* Home → RoleSelection */}
       <TouchableOpacity
         onPress={() => navigation.navigate("RoleSelection")}
         accessibilityLabel="Home"
       >
-        <Ionicons name="home-outline" size={28} color="#333" />
+        <Ionicons name="home-outline" size={28} color={theme.navIcon} />
       </TouchableOpacity>
 
       {/* Chatbot */}
@@ -22,7 +32,7 @@ export default function BottomNavigation() {
         onPress={() => navigation.navigate("Chatbot")}
         accessibilityLabel="Chatbot"
       >
-        <Ionicons name="chatbubble-ellipses-outline" size={28} color="#333" />
+        <Ionicons name="chatbubble-ellipses-outline" size={28} color={theme.navIcon} />
       </TouchableOpacity>
 
       {/* TTS → ChildDashboard */}
@@ -30,7 +40,7 @@ export default function BottomNavigation() {
         onPress={() => navigation.navigate("ChildDashboard")}
         accessibilityLabel="TTS Module"
       >
-        <Ionicons name="mic-outline" size={28} color="#333" />
+        <Ionicons name="mic-outline" size={28} color={theme.navIcon} />
       </TouchableOpacity>
 
       {/* Settings → Profile */}
@@ -38,7 +48,7 @@ export default function BottomNavigation() {
         onPress={() => navigation.navigate("Profile")}
         accessibilityLabel="Settings"
       >
-        <Ionicons name="settings-outline" size={28} color="#333" />
+        <Ionicons name="settings-outline" size={28} color={theme.navIcon} />
       </TouchableOpacity>
     </View>
   );

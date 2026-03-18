@@ -16,6 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSymbols } from "../context/SymbolsContext";
 import { useAccessibility } from "../context/AccessibilityContext";
+import { useTheme } from "../context/ThemeContext";
 
 // ── Design tokens (consistent across all screens) ───────────────
 const COLORS = {
@@ -86,6 +87,7 @@ const rankStyles = StyleSheet.create({
 export default function SymbolAnalytics({ navigation }) {
   const { symbols, resetUsageCounts, lastResetDate } = useSymbols();
   const { highContrast, largerText } = useAccessibility();
+  const { theme, isDark } = useTheme();
 
   const totalSymbols = symbols.length;
   const totalClicks = symbols.reduce((sum, s) => sum + (s.usageCount || 0), 0);
@@ -181,16 +183,16 @@ export default function SymbolAnalytics({ navigation }) {
   return (
     <View style={styles.container}>
       {/* ── Header ──────────────────────────────────────────────── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.headerBackground }]}>
         <StatusBar
           translucent
-          backgroundColor={COLORS.primary}
+          backgroundColor={theme.primary}
           barStyle="light-content"
         />
         <SafeAreaView>
           <View style={styles.headerContent}>
             <TouchableOpacity
-              style={[styles.headerIconBtn, highContrast && styles.highContrastBorder]}
+              style={[styles.headerIconBtn, { backgroundColor: theme.headerIconBackground }, highContrast && styles.highContrastBorder]}
               onPress={() => {
                 if (navigation.canGoBack()) navigation.goBack();
                 else navigation.navigate("Home");
@@ -200,22 +202,22 @@ export default function SymbolAnalytics({ navigation }) {
               accessibilityHint="Returns to previous screen"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="arrow-back" size={22} color={COLORS.textOnPrimary} />
+              <Ionicons name="arrow-back" size={22} color={theme.headerText} />
             </TouchableOpacity>
 
-            <Text style={[styles.headerTitle, { fontSize: dynHeaderTitle }]}>
+            <Text style={[styles.headerTitle, { fontSize: dynHeaderTitle, color: theme.headerText }]}>
               Symbol Analytics
             </Text>
 
             <TouchableOpacity
-              style={styles.headerIconBtn}
+              style={[styles.headerIconBtn, { backgroundColor: theme.headerIconBackground }]}
               onPress={handleManualReset}
               accessibilityLabel="Reset analytics"
               accessibilityRole="button"
               accessibilityHint="Resets all symbol usage counts and starts new tracking period"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="refresh-outline" size={20} color={COLORS.textOnPrimary} />
+              <Ionicons name="refresh-outline" size={20} color={theme.headerText} />
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -227,7 +229,7 @@ export default function SymbolAnalytics({ navigation }) {
         style={styles.background}
         resizeMode="cover"
       >
-        <View style={styles.overlay} />
+        <View style={[styles.overlay, { backgroundColor: theme.overlay }]} />
 
         <FlatList
           data={topSymbols}
@@ -241,14 +243,14 @@ export default function SymbolAnalytics({ navigation }) {
             <>
               {/* ── Stat pills row ───────────────────────────── */}
               <View style={styles.statsRow}>
-                <View style={styles.statCard}>
-                  <Text style={[styles.statValue, { fontSize: largerText ? 28 : 24 }]}>
+                <View style={[styles.statCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+                  <Text style={[styles.statValue, { color: theme.text, fontSize: largerText ? 28 : 24 }]}>
                     {totalSymbols}
                   </Text>
-                  <Text style={[styles.statLabel, { fontSize: dynSmall }]}>Symbols</Text>
+                  <Text style={[styles.statLabel, { color: theme.subtext, fontSize: dynSmall }]}>Symbols</Text>
                 </View>
 
-                <View style={[styles.statCard, styles.statCardAccent]}>
+                <View style={[styles.statCard, styles.statCardAccent, { backgroundColor: theme.primary }]}>
                   <Text style={[styles.statValueAccent, { fontSize: largerText ? 28 : 24 }]}>
                     {totalClicks}
                   </Text>
@@ -257,20 +259,20 @@ export default function SymbolAnalytics({ navigation }) {
               </View>
 
               {/* ── Reset timer card ─────────────────────────── */}
-              <View style={[styles.timerCard, highContrast && styles.highContrastBorder]}>
+              <View style={[styles.timerCard, { backgroundColor: isDark ? theme.secondaryCard : COLORS.timerBg, borderColor: theme.border }, highContrast && styles.highContrastBorder]}>
                 <View style={styles.timerLeft}>
-                  <Ionicons name="time-outline" size={18} color={COLORS.primary} />
+                  <Ionicons name="time-outline" size={18} color={theme.primary} />
                   <View>
-                    <Text style={[styles.timerTitle, { fontSize: dynBody }]}>
+                    <Text style={[styles.timerTitle, { color: theme.text, fontSize: dynBody }]}>
                       Weekly Reset
                     </Text>
-                    <Text style={[styles.timerDate, { fontSize: dynSmall }]}>
+                    <Text style={[styles.timerDate, { color: theme.subtext, fontSize: dynSmall }]}>
                       {formatDate(nextReset)}
                     </Text>
                   </View>
                 </View>
-                <View style={styles.timerBadge}>
-                  <Text style={[styles.timerBadgeText, { fontSize: dynSmall }]}>
+                <View style={[styles.timerBadge, { backgroundColor: theme.primaryLight }]}>
+                  <Text style={[styles.timerBadgeText, { color: theme.primaryDark, fontSize: dynSmall }]}>
                     {days}d {hours}h
                   </Text>
                 </View>
@@ -278,7 +280,7 @@ export default function SymbolAnalytics({ navigation }) {
 
               {/* ── List heading ─────────────────────────────── */}
               {symbols.length > 0 && (
-                <Text style={[styles.sectionTitle, { fontSize: dynSubtitle }]}>
+                <Text style={[styles.sectionTitle, { color: theme.text, fontSize: dynSubtitle }]}>
                   Top {topSymbols.length} Most Used
                 </Text>
               )}
@@ -286,9 +288,9 @@ export default function SymbolAnalytics({ navigation }) {
           }
           ListEmptyComponent={
             <View style={styles.emptyCard}>
-              <Ionicons name="bar-chart-outline" size={40} color={COLORS.primary} style={{ marginBottom: 10 }} />
-              <Text style={[styles.emptyText, { fontSize: dynBody + 2 }]}>No data yet</Text>
-              <Text style={[styles.emptyHint, { fontSize: dynBody }]}>
+              <Ionicons name="bar-chart-outline" size={40} color={theme.primary} style={{ marginBottom: 10 }} />
+              <Text style={[styles.emptyText, { color: theme.text, fontSize: dynBody + 2 }]}>No data yet</Text>
+              <Text style={[styles.emptyHint, { color: theme.subtext, fontSize: dynBody }]}>
                 Usage stats appear once the child starts tapping symbols
               </Text>
             </View>

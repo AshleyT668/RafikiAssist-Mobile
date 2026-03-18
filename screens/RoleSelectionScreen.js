@@ -11,6 +11,8 @@ import {
   Platform,
 } from "react-native";
 import { useAccessibility } from "../context/AccessibilityContext";
+import { saveUserRole } from "../services/userService";
+import { useTheme } from "../context/ThemeContext";
 
 // ── Design tokens (consistent with LoginScreen) ─────────────────
 const COLORS = {
@@ -42,6 +44,7 @@ const RADIUS = {
 
 export default function RoleSelectionScreen({ navigation, setRole }) {
   const { highContrast, largerText } = useAccessibility();
+  const { theme, isDark } = useTheme();
 
   const dynTitle = largerText ? 30 : 24;
   const dynSubtitle = largerText ? 19 : 15;
@@ -51,19 +54,19 @@ export default function RoleSelectionScreen({ navigation, setRole }) {
   return (
     <View style={styles.container}>
       {/* ── Header ──────────────────────────────────────────────── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.headerBackground }]}>
         <StatusBar
           translucent
-          backgroundColor={COLORS.primary}
+          backgroundColor={theme.primary}
           barStyle="light-content"
         />
         <SafeAreaView>
           <View style={styles.headerContent}>
             {/* Brand mark */}
-            <View style={styles.headerLogoCircle}>
+            <View style={[styles.headerLogoCircle, { backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.2)" }]}>
               <Text style={styles.headerLogoEmoji}>🤝</Text>
             </View>
-            <Text style={[styles.headerTitle, { fontSize: dynHeaderTitle }]}>
+            <Text style={[styles.headerTitle, { fontSize: dynHeaderTitle, color: theme.headerText }]}>
               Jambo Rafiki
             </Text>
           </View>
@@ -77,14 +80,14 @@ export default function RoleSelectionScreen({ navigation, setRole }) {
         resizeMode="cover"
       >
         {/* Soft tinted overlay */}
-        <View style={styles.overlay} />
+        <View style={[styles.overlay, { backgroundColor: theme.overlay }]} />
 
         <View style={styles.content}>
           {/* Heading block */}
-          <Text style={[styles.title, { fontSize: dynTitle }]}>
+          <Text style={[styles.title, { fontSize: dynTitle, color: theme.text }]}>
             Welcome to Rafiki Assist!
           </Text>
-          <Text style={[styles.subtitle, { fontSize: dynSubtitle }]}>
+          <Text style={[styles.subtitle, { fontSize: dynSubtitle, color: theme.subtext }]}>
             Who are you today?
           </Text>
 
@@ -92,10 +95,14 @@ export default function RoleSelectionScreen({ navigation, setRole }) {
           <TouchableOpacity
             style={[
               styles.roleCard,
+              { backgroundColor: theme.card, shadowColor: theme.shadow },
               highContrast && styles.highContrastBorder,
             ]}
             onPress={() => {
               setRole("child");
+              saveUserRole("child").catch((error) =>
+                console.error("Failed to save child role:", error)
+              );
               navigation.navigate("ChildDashboard");
             }}
             accessibilityLabel="I am a child"
@@ -103,18 +110,18 @@ export default function RoleSelectionScreen({ navigation, setRole }) {
             accessibilityHint="Selects child mode with symbol communication"
             activeOpacity={0.85}
           >
-            <View style={[styles.roleIconCircle, { backgroundColor: COLORS.childIconBg }]}>
+            <View style={[styles.roleIconCircle, { backgroundColor: theme.primaryLight }]}>
               <Text style={styles.roleIcon}>🧒</Text>
             </View>
             <View style={styles.roleTextBlock}>
-              <Text style={[styles.roleTitle, { fontSize: dynBtnText + 1 }]}>
+              <Text style={[styles.roleTitle, { fontSize: dynBtnText + 1, color: theme.text }]}>
                 I am a child
               </Text>
-              <Text style={[styles.roleHint, { fontSize: dynSubtitle - 2 }]}>
+              <Text style={[styles.roleHint, { fontSize: dynSubtitle - 2, color: theme.subtext }]}>
                 Symbol & picture communication
               </Text>
             </View>
-            <View style={styles.roleChevron}>
+            <View style={[styles.roleChevron, { backgroundColor: theme.secondaryCard }]}>
               <Text style={styles.chevronText}>›</Text>
             </View>
           </TouchableOpacity>
@@ -123,10 +130,14 @@ export default function RoleSelectionScreen({ navigation, setRole }) {
           <TouchableOpacity
             style={[
               styles.roleCard,
+              { backgroundColor: theme.card, shadowColor: theme.shadow },
               highContrast && styles.highContrastBorder,
             ]}
             onPress={() => {
               setRole("caregiver");
+              saveUserRole("caregiver").catch((error) =>
+                console.error("Failed to save caregiver role:", error)
+              );
               navigation.navigate("CaregiverDashboard");
             }}
             accessibilityLabel="I am a caregiver"
@@ -134,18 +145,18 @@ export default function RoleSelectionScreen({ navigation, setRole }) {
             accessibilityHint="Selects caregiver mode with management features"
             activeOpacity={0.85}
           >
-            <View style={[styles.roleIconCircle, { backgroundColor: COLORS.caregiverIconBg }]}>
+            <View style={[styles.roleIconCircle, { backgroundColor: theme.primaryLight }]}>
               <Text style={styles.roleIcon}>👩‍⚕️</Text>
             </View>
             <View style={styles.roleTextBlock}>
-              <Text style={[styles.roleTitle, { fontSize: dynBtnText + 1 }]}>
+              <Text style={[styles.roleTitle, { fontSize: dynBtnText + 1, color: theme.text }]}>
                 I am a caregiver
               </Text>
-              <Text style={[styles.roleHint, { fontSize: dynSubtitle - 2 }]}>
+              <Text style={[styles.roleHint, { fontSize: dynSubtitle - 2, color: theme.subtext }]}>
                 Manage settings & communication boards
               </Text>
             </View>
-            <View style={styles.roleChevron}>
+            <View style={[styles.roleChevron, { backgroundColor: theme.secondaryCard }]}>
               <Text style={styles.chevronText}>›</Text>
             </View>
           </TouchableOpacity>
