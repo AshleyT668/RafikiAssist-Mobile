@@ -1,65 +1,56 @@
 # Rafiki Assist Mobile
 
-Rafiki Assist Mobile is a React Native and Expo application designed to support child-caregiver communication, symbol-based expression, and caregiver wellbeing in one mobile experience. The app combines AAC-style symbol interaction, caregiver-facing management tools, analytics, and a supportive chatbot experience backed by Firebase services and a custom chat API.
+Rafiki Assist Mobile is an Expo React Native app built to support child-caregiver communication, symbol-based expression, caregiver support, and secure account access in one mobile experience.
 
-This repository reflects the current implementation of the Rafiki Assist mobile project, including authentication, profile management, accessibility settings, symbol management, usage analytics, and two-factor authentication with Google Authenticator.
+The current app includes Firebase-backed authentication, per-user profile storage, private user-scoped symbol data, profile photo uploads, optional TOTP-based two-factor authentication, accessibility settings, dark mode, analytics, and a caregiver chatbot interface.
 
-## Project Overview
+## Current Status
 
-Rafiki Assist Mobile was built as a companion platform for two main user roles:
+This repository reflects the app in its current working state, including recent updates for:
 
-- Children who use visual symbols and text-to-speech support to communicate.
-- Caregivers who manage symbols, review usage analytics, and access emotional support through the Rafiki chatbot.
+- user-specific account and profile records under `users/{uid}`
+- tighter Firestore and Storage security rules
+- user-scoped local symbol persistence so one signed-in user does not see another user's symbols
+- profile photo upload flow through Firebase Storage
+- app-wide light and dark theme support across the major screens, cards, headers, and bottom navigation
+- Google sign-in groundwork for Firebase Auth
 
-The current application flow includes:
+## Main Features
 
-- Account registration and login with Firebase Authentication
+### Authentication and Account Access
+
+- Email/password sign up and sign in with Firebase Authentication
+- Persistent signed-in session using React Native AsyncStorage
 - Email verification before full app access
-- Optional TOTP-based two-factor authentication
-- Role selection for child or caregiver mode
-- Symbol creation and management
-- Text-to-speech playback for symbols
-- Weekly usage tracking and analytics
-- Profile editing, password changes, and accessibility preferences
-- Chat support through the Rafiki chatbot
-
-## Core Features
-
-### Authentication and Account Security
-
-- Firebase Authentication for sign up and sign in
-- Email verification flow before entering the main app
-- Google Authenticator style TOTP setup and verification
-- Backup code generation for account recovery
+- Optional TOTP setup and verification using Google Authenticator-compatible codes
+- Backup code generation for TOTP recovery
 - Password change flow
-- Persistent login state using AsyncStorage
+- Password visibility toggles on login and signup
 
-### Child Experience
+### User Profiles
 
-- Child dashboard for symbol-based communication
-- Tap-to-speak functionality powered by `expo-speech`
-- Larger text and high-contrast accessibility support
-- Simple, touch-friendly interface for everyday use
+- Canonical user profile document stored per authenticated user
+- Edit profile flow for name and profile details
+- Profile photo upload to a per-user Firebase Storage path
+- Theme and accessibility preferences exposed through profile/settings flows
 
-### Caregiver Experience
+### Child and Caregiver Flows
 
-- Caregiver dashboard for navigation to support tools
-- Symbol management screen to add, edit, and delete communication symbols
-- Symbol analytics to review usage patterns and reset weekly counts
-- Rafiki chatbot for supportive conversations and guidance
-- Profile screen with security, theme, and accessibility controls
+- Role selection for child or caregiver use
+- Child dashboard with symbol cards and tap-to-speak behavior
+- Caregiver dashboard with navigation into profile, symbol management, analytics, and chatbot tools
+- Symbol creation, editing, deletion, and usage tracking
+- Weekly symbol analytics charts
+- Rafiki chatbot with fallback replies if the backend is unavailable
 
-### Accessibility and Usability
+### Accessibility and Theme Support
 
-- High contrast mode
-- Larger text mode
-- Theme switching with light and dark themes
-- Accessibility labels, hints, and roles across major screens
-- Persistent accessibility and symbol preferences using AsyncStorage
+- Light mode and dark mode
+- Larger text support
+- High-contrast mode
+- Shared theme wiring across screens, cards, headers, inputs, and bottom navigation
 
-## Screens Included
-
-The app currently includes the following main screens:
+## Main Screens
 
 - `LoginScreen`
 - `SignupScreen`
@@ -67,9 +58,9 @@ The app currently includes the following main screens:
 - `RoleSelectionScreen`
 - `CaregiverDashboard`
 - `ChildDashboard`
-- `ChatbotScreen`
 - `ManageSymbolsScreen`
 - `SymbolAnalytics`
+- `ChatbotScreen`
 - `ProfileScreen`
 - `EditProfileScreen`
 - `ChangePasswordScreen`
@@ -78,161 +69,169 @@ The app currently includes the following main screens:
 
 ## Technology Stack
 
-- React Native
 - Expo
+- React Native
 - React Navigation
 - Firebase Authentication
 - Cloud Firestore
 - Firebase Storage
 - AsyncStorage
-- Expo Speech
 - Expo Image Picker
-- OTPAuth for TOTP generation and verification
+- Expo Speech
+- Expo Auth Session
+- OTPAuth
 - React Native Chart Kit
 
-## Architecture Summary
-
-The project is structured around a mobile-first React Native app, with shared state managed through context providers:
-
-- `context/SymbolsContext.js`
-  Manages symbols, usage counts, persistence, and weekly resets.
-
-- `context/AccessibilityContext.js`
-  Stores accessibility preferences such as high contrast and larger text.
-
-- `context/ThemeContext.js`
-  Provides light and dark theme support.
-
-- `services/chatService.js`
-  Connects the app to the external Rafiki chatbot API.
-
-- `services/userService.js`
-  Handles profile image uploads, profile updates, and password changes.
-
-Firebase is used for authentication, Firestore data storage, and media storage. Local app preferences and symbol state are also persisted with AsyncStorage to improve continuity and usability.
-
-## Repository Structure
+## Project Structure
 
 ```text
 .
 |-- App.js
+|-- app.json
 |-- firebaseConfig.js
 |-- components/
 |-- context/
 |-- screens/
 |-- services/
 |-- assets/
+|-- firestore.rules
+|-- storage.rules
+|-- firestore.indexes.json
 |-- functions/
 |-- dataconnect/
 |-- dataconnect-generated/
-|-- firestore.rules
-|-- firestore.indexes.json
 ```
 
-Notable folders:
+Important areas:
 
-- `screens/` contains the main app interfaces and navigation targets.
-- `components/` contains reusable UI elements such as bottom navigation.
-- `context/` contains state providers for theme, accessibility, profile, and symbols.
-- `services/` contains API and Firebase-related helper logic.
-- `functions/` contains Firebase Functions-related code.
-- `dataconnect/` and `dataconnect-generated/` contain Firebase Data Connect configuration and generated connector files.
+- `App.js`
+  Handles the top-level auth flow, route switching, and provider wiring.
 
-## Setup Instructions
+- `context/SymbolsContext.js`
+  Manages symbol state, usage counts, weekly reset handling, and user-scoped local persistence.
+
+- `context/AccessibilityContext.js`
+  Stores accessibility preferences such as larger text and high contrast.
+
+- `context/ThemeContext.js`
+  Provides the shared light/dark theme used across the app.
+
+- `services/userService.js`
+  Handles user profile reads and writes, password changes, and profile image upload helpers.
+
+- `services/googleAuthService.js`
+  Contains the Google sign-in helper logic used by the login flow.
+
+- `services/chatService.js`
+  Connects the app to the external chatbot backend.
+
+## Setup
 
 ### Prerequisites
 
-Install the following before running the project:
-
 - Node.js
 - npm
-- Expo CLI tools if needed
-- Android Studio or Xcode for emulator/simulator testing
-- A Firebase project configured for Authentication, Firestore, and Storage
+- An Expo-compatible simulator, emulator, or device
+- A Firebase project with:
+  - Authentication
+  - Firestore
+  - Storage
 
-### 1. Install dependencies
+### Install dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Start the Expo app
+### Start the app
 
 ```bash
 npm start
 ```
 
-You can also run:
+You can also use:
 
 ```bash
-npm run android
 npm run ios
+npm run android
 npm run web
 ```
 
-## Firebase Configuration
+## Firebase Setup
 
-Firebase is configured in `firebaseConfig.js`.
+Firebase is configured in [`firebaseConfig.js`](./firebaseConfig.js).
 
-The current app uses:
+To run this app correctly, make sure your Firebase project has:
 
-- Firebase Authentication
-- Cloud Firestore
-- Firebase Storage
+- Email/password authentication enabled
+- Firestore enabled
+- Storage enabled
+- Google sign-in enabled if you want to use Google auth later
 
-If you are adapting this project for a different Firebase project, update the configuration values in `firebaseConfig.js` and ensure the following services are enabled in Firebase Console:
+This repository includes:
 
-- Email/password authentication
-- Firestore database
-- Storage
+- [`firestore.rules`](./firestore.rules)
+- [`storage.rules`](./storage.rules)
+- [`firestore.indexes.json`](./firestore.indexes.json)
 
-This app also includes Firestore rules and indexes:
+Deploy the rules before relying on profile uploads or private per-user data:
 
-- `firestore.rules`
-- `firestore.indexes.json`
+```bash
+firebase deploy --only firestore:rules,storage
+```
+
+If you use a different Firebase project, update the app's Firebase config values accordingly.
+
+## User Data Model
+
+The app now treats the authenticated Firebase user ID as the primary owner key.
+
+Examples:
+
+- user profile documents live under `users/{uid}`
+- profile images are stored under `userProfiles/{uid}/...`
+- account-protected TOTP data is tied to the authenticated user
+- locally persisted symbol data is scoped by user ID so accounts on the same device do not share symbol caches
+
+## Google Sign-In Notes
+
+Google sign-in groundwork has been added, but there is an important development caveat:
+
+- `Expo Go` is not the ideal environment for testing OAuth flows like Google sign-in
+- the current setup is better suited to a development build or production app build
+- `app.json` includes placeholders or partial values for Google OAuth client IDs
+
+Before enabling Google sign-in fully, make sure you have:
+
+- a Firebase Web app
+- a Firebase iOS app
+- a Firebase Android app
+- the matching Google OAuth client IDs
+- Firebase Authentication Google provider enabled
 
 ## Chatbot Backend
 
-The chatbot currently relies on an external API URL defined in `services/chatService.js`.
+The chatbot uses the API endpoint defined in [`services/chatService.js`](./services/chatService.js).
 
-At the moment, the chat service is pointed to a LocalTunnel-based endpoint:
-
-- `https://large-masks-try.loca.lt`
-
-Before using the chatbot in another environment, update `KAGGLE_API_URL` in `services/chatService.js` to the active backend URL.
-
-If the chatbot API is unavailable, the app falls back to built-in supportive responses inside `ChatbotScreen.js`.
+If the backend is unavailable, the app falls back to built-in supportive responses in the chatbot screen.
 
 ## Security Notes
 
-- Email verification is required before full access to the app.
-- TOTP-based two-factor authentication is available through Google Authenticator.
-- Backup codes are generated and stored for account recovery.
-- Sensitive Firebase configuration is currently stored directly in `firebaseConfig.js`.
-- Firestore rules in this repository should be reviewed before production deployment.
+The repository now includes owner-based Firestore and Storage rules intended to make user data private by default. Even so, production deployment should still include a review of:
 
-Important: the current `firestore.rules` file contains time-limited development-style access rules and should be tightened for production use.
+- Firestore rules
+- Storage rules
+- Firebase Authentication providers
+- Storage bucket configuration
+- project billing/storage plan if you rely on Firebase Storage uploads
 
-## Current Limitations
+## Known Limitations
 
-- The chatbot depends on an external backend URL that may change or expire.
-- Firebase configuration is hardcoded instead of using environment-based secrets management.
-- Some project modules, such as Firebase Functions and Data Connect assets, are included but may require additional setup before use.
-- The app is mobile-focused and some flows may need refinement for web deployment.
-
-## Recommended Improvements
-
-- Move Firebase and backend configuration into environment variables or app config
-- Harden Firestore and Storage security rules
-- Add automated tests for authentication, navigation, and symbol management flows
-- Document backend deployment for the chatbot service
-- Add CI/CD for linting, testing, and deployment checks
-- Expand analytics and caregiver reporting
-
-## Documentation Alignment
-
-This README has been updated to reflect the current implemented mobile application and its documented goals: supporting caregiver-child communication, accessibility, symbol-assisted interaction, and secure account access. It is intended to serve as the main technical and project-facing overview for the repository.
+- Google sign-in is not fully practical to test in Expo Go
+- The chatbot depends on an external backend URL
+- Some Firebase Functions and Data Connect files are present but are not the main runtime path for the mobile app
+- Web support may require extra refinement compared with the native mobile flows
 
 ## License
 
-This repository currently lists the project license as `0BSD` in `package.json`.
+The project currently lists its license as `0BSD` in [`package.json`](./package.json).
