@@ -1,14 +1,53 @@
-// screens/LoginScreen.js - FIXED NAVIGATION
+// screens/LoginScreen.js - REVAMPED UI (autism-friendly, modern, clean)
 import React, { useState, useRef, useEffect } from "react";
-import { 
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, 
-  KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, 
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
+  KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard,
   ImageBackground, Animated, Modal,
   ActivityIndicator
 } from "react-native";
 import { signInWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth, is2FAEnabled, verifyTOTPLogin } from "../firebaseConfig";
 import { getErrorMessage } from "../utils";
+
+// ── Design tokens ──────────────────────────────────────────────
+const COLORS = {
+  bg: "#F4F8F7",           // soft sage-white — calming, never harsh
+  card: "#FFFFFF",
+  primary: "#4AADA3",      // muted teal — warm, non-aggressive
+  primaryDark: "#37877E",
+  primaryLight: "#E6F4F3",
+  text: "#2C3E3D",         // near-black with warmth
+  textSoft: "#6B8280",
+  border: "#D6E8E6",
+  borderFocus: "#4AADA3",
+  error: "#C0544C",
+  errorBg: "#FDF0EF",
+  infoBg: "#EBF5F4",
+  infoText: "#2E7B74",
+  white: "#FFFFFF",
+  shadow: "#2C3E3D",
+  disabledOpacity: 0.5,
+};
+
+const RADIUS = {
+  sm: 12,
+  md: 16,
+  lg: 20,
+  full: 999,
+};
+
+const FONT = {
+  title: { fontSize: 26, fontWeight: "700", letterSpacing: 0.2 },
+  subtitle: { fontSize: 15, fontWeight: "400", lineHeight: 22 },
+  label: { fontSize: 14, fontWeight: "600", letterSpacing: 0.3 },
+  body: { fontSize: 16, fontWeight: "400" },
+  button: { fontSize: 17, fontWeight: "700", letterSpacing: 0.4 },
+  link: { fontSize: 15, fontWeight: "600" },
+  code: { fontSize: 22, fontWeight: "700", letterSpacing: 10 },
+  info: { fontSize: 14, fontWeight: "500", lineHeight: 20 },
+};
+// ───────────────────────────────────────────────────────────────
 
 export default function LoginScreen({ navigation, route, on2FASuccess }) {
   const [email, setEmail] = useState("");
@@ -19,8 +58,10 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
   const [tempUser, setTempUser] = useState(null);
   const [totpLoading, setTotpLoading] = useState(false);
   const [totpError, setTotpError] = useState("");
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
-  // Check for message from signup screen
+  // ── Check for message from signup screen ──────────────────────
   useEffect(() => {
     if (route.params?.message) {
       Alert.alert("Email Verification Required", route.params.message);
@@ -28,47 +69,42 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
     }
   }, [route.params]);
 
-  // Animation for fade-in
+  // ── Fade-in animation ─────────────────────────────────────────
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(24)).current;
+
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
+  // ── Handlers (unchanged logic) ────────────────────────────────
   const handleTOTPVerification = async () => {
     if (!totpCode || totpCode.length !== 6) {
       setTotpError("Please enter a 6-digit code from Google Authenticator");
       return;
     }
-
     setTotpLoading(true);
     setTotpError("");
     try {
-      console.log('🔄 Verifying TOTP code for login...');
       await verifyTOTPLogin(tempUser, totpCode);
-      
-      console.log('✅ TOTP verification successful!');
-      
-      // Call the success callback to update App.js state
-      if (on2FASuccess) {
-        on2FASuccess();
-      }
-      
+      if (on2FASuccess) on2FASuccess();
       Alert.alert("Success", "Login successful!");
-      
-      // Reset all states
       setShowTOTPModal(false);
       setTotpCode("");
       setTotpError("");
       setTempUser(null);
-      
-      console.log('✅ TOTP completed - App will automatically show main app');
-      
     } catch (error) {
-      console.error('❌ TOTP verification failed:', error);
       setTotpError(error.message || "Invalid code. Please try again.");
       setTotpCode("");
     } finally {
@@ -81,25 +117,19 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
-    
     setLoading(true);
     try {
-      console.log('🚀 Starting login process...');
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      
-      console.log('✅ Basic login successful:', user.email);
-      
-      // CHECK IF EMAIL IS VERIFIED
+
       if (!user.emailVerified) {
-        console.log('📧 Email not verified, showing alert...');
         Alert.alert(
           "Email Not Verified ❗",
           "Please verify your email address before logging in. Check your inbox for the verification link.",
           [
             { text: "OK" },
-            { 
-              text: "Resend Verification", 
+            {
+              text: "Resend Verification",
               onPress: async () => {
                 try {
                   await sendEmailVerification(user);
@@ -107,33 +137,23 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
                 } catch (error) {
                   Alert.alert("Error", "Failed to send verification email.");
                 }
-              } 
-            }
+              },
+            },
           ]
         );
         await auth.signOut();
         setLoading(false);
         return;
       }
-      
-      // ✅ CHECK IF 2FA IS ENABLED FOR THIS USER
-      console.log('🔐 Checking if 2FA is enabled for:', user.email);
+
       const is2FARequired = await is2FAEnabled(user);
-      console.log('🔐 2FA Check Result:', is2FARequired);
-      
       if (is2FARequired) {
-        console.log('🎯 2FA IS ENABLED - Showing TOTP modal');
         setTempUser(user);
         setShowTOTPModal(true);
         setLoading(false);
         return;
-      } else {
-        console.log('🔓 No 2FA required - proceeding to main app');
-        // No 2FA required - App.js will automatically show main app
       }
-      
     } catch (error) {
-      console.error('❌ Login failed:', error);
       Alert.alert("Login Failed", getErrorMessage(error));
     } finally {
       setLoading(false);
@@ -141,7 +161,6 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
   };
 
   const handleCloseTOTPModal = async () => {
-    console.log('❌ Closing TOTP modal, signing out...');
     setShowTOTPModal(false);
     setTotpCode("");
     setTotpError("");
@@ -152,16 +171,13 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
   };
 
   const handleUseBackupCode = () => {
-    Alert.alert(
-      "Backup Code",
-      "Backup code feature coming soon!",
-      [{ text: "OK" }]
-    );
+    Alert.alert("Backup Code", "Backup code feature coming soon!", [{ text: "OK" }]);
   };
 
+  // ── Render ────────────────────────────────────────────────────
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === "ios" ? "padding" : "height"} 
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -169,41 +185,94 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
           source={require("../assets/rafiki_background.png")}
           style={styles.background}
         >
-          <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-            <Text style={styles.title}>Login to Rafiki Assist</Text>
-            
-            {/* Regular login form */}
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoFocus
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+          {/* Soft overlay for readability */}
+          <View style={styles.overlay} />
+
+          <Animated.View
+            style={[
+              styles.card,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            {/* Logo / brand mark */}
+            <View style={styles.logoRow}>
+              <View style={styles.logoCircle}>
+                <Text style={styles.logoEmoji}>🤝</Text>
+              </View>
+            </View>
+
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>Sign in to Rafiki Assist</Text>
+
+            {/* Email input */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Email</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  emailFocused && styles.inputFocused,
+                ]}
+                placeholder="your@email.com"
+                placeholderTextColor={COLORS.textSoft}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoFocus
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
+              />
+            </View>
+
+            {/* Password input */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Password</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  passwordFocused && styles.inputFocused,
+                ]}
+                placeholder="Enter your password"
+                placeholderTextColor={COLORS.textSoft}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
+              />
+            </View>
+
+            {/* Login button */}
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleLogin}
               disabled={loading}
+              activeOpacity={0.85}
             >
-              <Text style={styles.buttonText}>
-                {loading ? "Logging in..." : "Login"}
-              </Text>
+              {loading ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={styles.buttonText}>Sign In</Text>
+              )}
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
-              <Text style={styles.link}>Don't have an account? Sign Up</Text>
+
+            {/* Sign-up link */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Signup")}
+              style={styles.linkRow}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.linkText}>
+                Don't have an account?{" "}
+                <Text style={styles.linkAccent}>Sign Up</Text>
+              </Text>
             </TouchableOpacity>
           </Animated.View>
 
-          {/* TOTP Modal */}
+          {/* ── TOTP Modal ──────────────────────────────────────── */}
           <Modal
             visible={showTOTPModal}
             animationType="slide"
@@ -211,31 +280,43 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
             onRequestClose={handleCloseTOTPModal}
           >
             <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Two-Factor Authentication Required</Text>
-                <Text style={styles.modalSubtitle}>
-                  Open Google Authenticator and enter the 6-digit code to continue
-                </Text>
-                
-                <View style={styles.authenticatorInfo}>
-                  <Text style={styles.infoText}>📱 Open Google Authenticator app</Text>
-                  <Text style={styles.infoText}>🔢 Find "Rafiki Assist" account</Text>
-                  <Text style={styles.infoText}>⌨️ Enter the 6-digit code below</Text>
-                  <Text style={[styles.infoText, styles.autoSubmitInfo]}>
-                    ✅ Press "Done" on keyboard when finished
-                  </Text>
+              <View style={styles.modalCard}>
+
+                {/* Icon header */}
+                <View style={styles.modalIconWrap}>
+                  <Text style={styles.modalIcon}>🔐</Text>
                 </View>
-                
+
+                <Text style={styles.modalTitle}>Two-Step Verification</Text>
+                <Text style={styles.modalSubtitle}>
+                  Open Google Authenticator and enter the 6-digit code for Rafiki Assist
+                </Text>
+
+                {/* Steps */}
+                <View style={styles.stepsBox}>
+                  {[
+                    { icon: "📱", text: "Open Google Authenticator" },
+                    { icon: "🔎", text: "Find \"Rafiki Assist\" account" },
+                    { icon: "⌨️", text: "Enter the 6-digit code below" },
+                  ].map((step, i) => (
+                    <View key={i} style={styles.stepRow}>
+                      <Text style={styles.stepIcon}>{step.icon}</Text>
+                      <Text style={styles.stepText}>{step.text}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Code input */}
                 <TextInput
                   style={[
                     styles.totpInput,
-                    totpError ? styles.inputError : null
+                    totpError ? styles.totpInputError : null,
                   ]}
-                  placeholder="000000"
+                  placeholder="— — — — — —"
+                  placeholderTextColor={COLORS.textSoft}
                   value={totpCode}
                   onChangeText={(text) => {
-                    // Only allow numbers and limit to 6 digits
-                    const numbersOnly = text.replace(/[^0-9]/g, '');
+                    const numbersOnly = text.replace(/[^0-9]/g, "");
                     setTotpCode(numbersOnly.slice(0, 6));
                     setTotpError("");
                   }}
@@ -247,40 +328,45 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
                   onSubmitEditing={handleTOTPVerification}
                   blurOnSubmit={true}
                 />
-                
+
                 {totpError ? (
-                  <Text style={styles.errorText}>{totpError}</Text>
+                  <View style={styles.errorBox}>
+                    <Text style={styles.errorText}>{totpError}</Text>
+                  </View>
                 ) : null}
-                
+
+                {/* Verify button */}
                 <TouchableOpacity
-                  style={[
-                    styles.button, 
-                    totpLoading && styles.buttonDisabled,
-                    styles.verifyButton
-                  ]}
+                  style={[styles.button, totpLoading && styles.buttonDisabled, { marginTop: 4 }]}
                   onPress={handleTOTPVerification}
                   disabled={totpLoading}
+                  activeOpacity={0.85}
                 >
                   {totpLoading ? (
-                    <ActivityIndicator color="#fff" />
+                    <ActivityIndicator color={COLORS.white} />
                   ) : (
                     <Text style={styles.buttonText}>Verify & Continue</Text>
                   )}
                 </TouchableOpacity>
-                
+
+                {/* Secondary actions */}
                 <View style={styles.modalActions}>
-                  <TouchableOpacity 
-                    style={styles.textButton}
+                  <TouchableOpacity
+                    style={styles.ghostButton}
                     onPress={handleUseBackupCode}
+                    activeOpacity={0.7}
                   >
-                    <Text style={styles.textButtonText}>Use Backup Code</Text>
+                    <Text style={styles.ghostButtonText}>Use Backup Code</Text>
                   </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    style={styles.textButton}
+
+                  <TouchableOpacity
+                    style={styles.ghostButton}
                     onPress={handleCloseTOTPModal}
+                    activeOpacity={0.7}
                   >
-                    <Text style={[styles.textButtonText, styles.cancelText]}>Cancel Login</Text>
+                    <Text style={[styles.ghostButtonText, styles.cancelText]}>
+                      Cancel Login
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -293,147 +379,268 @@ export default function LoginScreen({ navigation, route, on2FASuccess }) {
 }
 
 const styles = StyleSheet.create({
-  background: { 
-    flex: 1, 
-    resizeMode: "cover", 
-    justifyContent: "center" 
-  },
-  container: { 
-    backgroundColor: "rgba(255, 255, 255, 0.95)", 
-    padding: 24, 
-    margin: 20, 
-    borderRadius: 16, 
-    shadowColor: "#000", 
-    shadowOpacity: 0.1, 
-    shadowRadius: 8, 
-    elevation: 4 
-  },
-  title: { 
-    fontSize: 22, 
-    fontWeight: "bold", 
-    marginBottom: 24, 
-    textAlign: "center", 
-    color: "#2b3d51" 
-  },
-  input: { 
-    borderWidth: 1, 
-    borderColor: "#ddd", 
-    padding: 16, 
-    borderRadius: 10, 
-    marginBottom: 16, 
-    backgroundColor: "#fff",
-    fontSize: 16
-  },
-  button: { 
-    backgroundColor: "#3da49a", 
-    padding: 16, 
-    borderRadius: 10,
-    marginBottom: 12
-  },
-  verifyButton: {
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: { 
-    color: "#fff", 
-    textAlign: "center", 
-    fontWeight: "bold", 
-    fontSize: 16 
-  },
-  textButton: {
-    padding: 12,
-    alignItems: "center",
-  },
-  textButtonText: {
-    color: "#3da49a",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  cancelText: {
-    color: "#666",
-  },
-  link: { 
-    color: "#3da49a", 
-    textAlign: "center", 
-    marginTop: 16, 
-    fontSize: 14,
-    fontWeight: "500"
-  },
-  modalOverlay: {
+  // ── Layout ───────────────────────────────────────────────────
+  background: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    resizeMode: "cover",
+    justifyContent: "center",
   },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: 24,
-    borderRadius: 16,
-    width: '100%',
-    maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(244, 248, 247, 0.72)",
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 8,
+
+  // ── Login card ────────────────────────────────────────────────
+  card: {
+    backgroundColor: COLORS.card,
+    marginHorizontal: 20,
+    borderRadius: RADIUS.lg,
+    padding: 28,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+
+  // ── Brand ─────────────────────────────────────────────────────
+  logoRow: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  logoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoEmoji: {
+    fontSize: 30,
+  },
+
+  // ── Headings ──────────────────────────────────────────────────
+  title: {
+    ...FONT.title,
+    color: COLORS.text,
     textAlign: "center",
-    color: "#2b3d51"
+    marginBottom: 4,
   },
-  modalSubtitle: {
-    fontSize: 14,
+  subtitle: {
+    ...FONT.subtitle,
+    color: COLORS.textSoft,
     textAlign: "center",
-    marginBottom: 20,
-    color: "#666",
-    lineHeight: 20
+    marginBottom: 28,
   },
-  authenticatorInfo: {
-    backgroundColor: '#f0f9ff',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 20,
+
+  // ── Form fields ───────────────────────────────────────────────
+  fieldGroup: {
+    marginBottom: 16,
   },
-  infoText: {
-    fontSize: 13,
-    color: '#0369a1',
+  fieldLabel: {
+    ...FONT.label,
+    color: COLORS.text,
     marginBottom: 6,
   },
-  autoSubmitInfo: {
-    fontWeight: '600',
-    color: '#059669',
+  input: {
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.sm,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    ...FONT.body,
+    color: COLORS.text,
+    minHeight: 52, // large tap target
   },
+  inputFocused: {
+    borderColor: COLORS.borderFocus,
+    backgroundColor: COLORS.white,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+
+  // ── Primary button ────────────────────────────────────────────
+  button: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 16,
+    borderRadius: RADIUS.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    minHeight: 56, // large tap target
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonDisabled: {
+    opacity: COLORS.disabledOpacity,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  buttonText: {
+    ...FONT.button,
+    color: COLORS.white,
+  },
+
+  // ── Sign-up link ──────────────────────────────────────────────
+  linkRow: {
+    marginTop: 20,
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  linkText: {
+    ...FONT.link,
+    color: COLORS.textSoft,
+  },
+  linkAccent: {
+    color: COLORS.primary,
+  },
+
+  // ── Modal overlay ─────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(44, 62, 61, 0.55)",
+    justifyContent: "flex-end", // sheet slides up from bottom — predictable
+    padding: 0,
+  },
+  modalCard: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === "ios" ? 40 : 28,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+
+  // Handle bar
+  handleBar: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.border,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+
+  // ── Modal header ──────────────────────────────────────────────
+  modalIconWrap: {
+    alignSelf: "center",
+    width: 60,
+    height: 60,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  modalIcon: {
+    fontSize: 28,
+  },
+  modalTitle: {
+    ...FONT.title,
+    fontSize: 20,
+    color: COLORS.text,
+    textAlign: "center",
+    marginBottom: 6,
+  },
+  modalSubtitle: {
+    ...FONT.subtitle,
+    color: COLORS.textSoft,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+
+  // ── Steps box ─────────────────────────────────────────────────
+  stepsBox: {
+    backgroundColor: COLORS.infoBg,
+    borderRadius: RADIUS.sm,
+    padding: 14,
+    marginBottom: 20,
+    gap: 10,
+  },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  stepIcon: {
+    fontSize: 18,
+    width: 28,
+    textAlign: "center",
+  },
+  stepText: {
+    ...FONT.info,
+    color: COLORS.infoText,
+    flex: 1,
+  },
+
+  // ── TOTP input ────────────────────────────────────────────────
   totpInput: {
     borderWidth: 2,
-    borderColor: "#3da49a",
-    padding: 16,
-    borderRadius: 10,
+    borderColor: COLORS.borderFocus,
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.sm,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    ...FONT.code,
+    color: COLORS.text,
+    textAlign: "center",
+    minHeight: 60,
     marginBottom: 8,
-    backgroundColor: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
-    letterSpacing: 8,
-    textAlign: 'center'
   },
-  inputError: {
-    borderColor: "#e53935",
-    backgroundColor: "#ffebee",
+  totpInputError: {
+    borderColor: COLORS.error,
+    backgroundColor: COLORS.errorBg,
+  },
+
+  // ── Error message ─────────────────────────────────────────────
+  errorBox: {
+    backgroundColor: COLORS.errorBg,
+    borderRadius: RADIUS.sm,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 10,
   },
   errorText: {
-    color: "#e53935",
+    color: COLORS.error,
     fontSize: 14,
-    textAlign: "center",
-    marginBottom: 12,
     fontWeight: "500",
+    textAlign: "center",
   },
+
+  // ── Modal secondary actions ───────────────────────────────────
   modalActions: {
-    marginTop: 8,
+    marginTop: 4,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  ghostButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    flex: 1,
     alignItems: "center",
+    minHeight: 48,
+    justifyContent: "center",
+  },
+  ghostButtonText: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  cancelText: {
+    color: COLORS.textSoft,
   },
 });

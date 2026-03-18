@@ -1,4 +1,4 @@
-// screens/ProfileScreen.js - UPDATED 2FA LOGIC
+// screens/ProfileScreen.js - REVAMPED UI (autism-friendly, modern, clean)
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Alert,
   Switch,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { signOut, onAuthStateChanged } from "firebase/auth";
@@ -22,6 +24,118 @@ import { useAccessibility } from "../context/AccessibilityContext";
 
 const db = getFirestore();
 
+// ── Design tokens ────────────────────────────────────────────────
+const COLORS = {
+  primary: "#4AADA3",
+  primaryDark: "#37877E",
+  primaryLight: "#E6F4F3",
+  text: "#2C3E3D",
+  textSoft: "#6B8280",
+  textOnPrimary: "#FFFFFF",
+  border: "#D6E8E6",
+  card: "#FFFFFF",
+  bg: "#F4F8F7",
+  shadow: "#2C3E3D",
+  // Status
+  success: "#2E7D54",
+  successBg: "#E8F5EE",
+  warning: "#B45309",
+  warningBg: "#FFF4E5",
+  danger: "#C0392B",
+  dangerBg: "#FDECEA",
+  // Switch
+  switchActive: "#4AADA3",
+  switchInactive: "#C5DCDA",
+};
+
+const RADIUS = { sm: 10, md: 14, lg: 18, xl: 24, full: 999 };
+
+// ── Section wrapper ───────────────────────────────────────────────
+const Section = ({ title, children, largerText, highContrast }) => (
+  <View style={[
+    sectionStyles.card,
+    highContrast && { borderWidth: 2, borderColor: COLORS.primary },
+  ]}>
+    {title ? (
+      <Text style={[sectionStyles.title, largerText && { fontSize: 18 }]}>{title}</Text>
+    ) : null}
+    {children}
+  </View>
+);
+const sectionStyles = StyleSheet.create({
+  card: {
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.lg,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 4,
+    marginBottom: 12,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  title: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: COLORS.textSoft,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+});
+
+// ── Row item ──────────────────────────────────────────────────────
+const RowItem = ({ icon, iconColor, title, subtitle, right, onPress, last, largerText }) => {
+  const Wrapper = onPress ? TouchableOpacity : View;
+  return (
+    <Wrapper
+      style={[rowStyles.row, last && rowStyles.rowLast]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <View style={rowStyles.iconCircle}>
+        <Ionicons name={icon} size={18} color={iconColor || COLORS.primary} />
+      </View>
+      <View style={rowStyles.textBlock}>
+        <Text style={[rowStyles.title, largerText && { fontSize: 17 }]}>{title}</Text>
+        {subtitle ? (
+          <Text style={[rowStyles.subtitle, largerText && { fontSize: 13 }]}>{subtitle}</Text>
+        ) : null}
+      </View>
+      {right}
+    </Wrapper>
+  );
+};
+const rowStyles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    gap: 12,
+  },
+  rowLast: {
+    borderBottomWidth: 0,
+    marginBottom: 6,
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  textBlock: { flex: 1 },
+  title: { fontSize: 15, fontWeight: "600", color: COLORS.text },
+  subtitle: { fontSize: 12, color: COLORS.textSoft, marginTop: 1 },
+});
+// ────────────────────────────────────────────────────────────────
+
 export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(null);
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
@@ -33,28 +147,20 @@ export default function ProfileScreen({ navigation }) {
 
   const { symbols } = useSymbols();
   const { theme, toggleTheme, isDark } = useTheme();
-  const { 
-    highContrast, 
-    largerText, 
-    saveAccessibilityPreferences,
-  } = useAccessibility();
+  const { highContrast, largerText, saveAccessibilityPreferences } = useAccessibility();
 
+  // ── Data loading (unchanged) ─────────────────────────────────
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       setLoading(true);
       try {
         const currentUser = auth.currentUser;
-        if (!currentUser) {
-          setUser(null);
-          setLoading(false);
-          return;
-        }
+        if (!currentUser) { setUser(null); setLoading(false); return; }
         setUser(currentUser);
         setDisplayName(currentUser.displayName || "");
         setProfilePic(currentUser.photoURL || null);
 
-        // Try to load cached userData for instant UI
         const cached = await AsyncStorage.getItem("userData");
         if (cached) {
           try {
@@ -63,12 +169,9 @@ export default function ProfileScreen({ navigation }) {
               setDisplayName(parsed.displayName || displayName);
               setProfilePic(parsed.photoURL || profilePic);
             }
-          } catch (e) {
-            // ignore parse issues
-          }
+          } catch (e) {}
         }
 
-        // fetch latest from firestore "users" doc if exists
         try {
           const docRef = doc(db, "users", currentUser.uid);
           const snap = await getDoc(docRef);
@@ -78,7 +181,6 @@ export default function ProfileScreen({ navigation }) {
               if (data.displayName) setDisplayName(data.displayName);
               if (data.photoURL) setProfilePic(data.photoURL);
             }
-            // update cache
             await AsyncStorage.setItem("userData", JSON.stringify({
               uid: currentUser.uid,
               displayName: data.displayName || currentUser.displayName || "",
@@ -86,11 +188,9 @@ export default function ProfileScreen({ navigation }) {
             }));
           }
         } catch (err) {
-          // network error: show nothing, keep cached/UI values
           console.warn("Could not fetch user doc:", err.message || err);
         }
 
-        // Check 2FA status
         await check2FAStatus(currentUser);
       } finally {
         if (mounted) setLoading(false);
@@ -100,36 +200,23 @@ export default function ProfileScreen({ navigation }) {
     load();
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
-      if (!u) {
-        setTwoFAEnabled(false);
-        setTotpEnabled(false);
-      } else {
-        check2FAStatus(u);
-      }
+      if (!u) { setTwoFAEnabled(false); setTotpEnabled(false); }
+      else check2FAStatus(u);
     });
-
-    return () => {
-      mounted = false;
-      unsub();
-    };
+    return () => { mounted = false; unsub(); };
   }, []);
 
+  // ── 2FA (unchanged logic) ────────────────────────────────────
   const check2FAStatus = async (currentUser) => {
     try {
       setTwoFALoading(true);
       const enabled = await is2FAEnabled(currentUser);
       const totpEnabledStatus = await hasTOTPEnabled(currentUser);
-      
       setTwoFAEnabled(enabled);
       setTotpEnabled(totpEnabledStatus);
-      
-      console.log('🔍 2FA Status Check:', { 
-        email: currentUser.email, 
-        enabled: enabled,
-        totpEnabled: totpEnabledStatus
-      });
+      console.log("🔍 2FA Status Check:", { email: currentUser.email, enabled, totpEnabled: totpEnabledStatus });
     } catch (error) {
-      console.error('❌ Error checking 2FA status:', error);
+      console.error("❌ Error checking 2FA status:", error);
       setTwoFAEnabled(false);
       setTotpEnabled(false);
     } finally {
@@ -143,45 +230,32 @@ export default function ProfileScreen({ navigation }) {
       "Are you sure you want to disable Google Authenticator? This will make your account less secure.",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Disable", 
+        {
+          text: "Disable",
           style: "destructive",
           onPress: async () => {
             try {
-              const user = auth.currentUser;
-              await disable2FA(user);
-              // Update local state
+              await disable2FA(auth.currentUser);
               setTotpEnabled(false);
               setTwoFAEnabled(false);
               Alert.alert("Success", "Google Authenticator has been disabled.");
             } catch (error) {
-              console.error('❌ Failed to disable 2FA:', error);
               Alert.alert("Error", "Failed to disable 2FA. Please try again.");
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
 
   const handleSetup2FA = () => {
-    navigation.navigate('TOTPSetup', {
-      onSetupComplete: () => {
-        // Refresh 2FA status after setup
-        check2FAStatus(auth.currentUser);
-      }
-    });
+    navigation.navigate("TOTPSetup", { onSetupComplete: () => check2FAStatus(auth.currentUser) });
   };
 
-  const toggleHighContrast = () => {
-    const newValue = !highContrast;
-    saveAccessibilityPreferences({ highContrast: newValue });
-  };
+  const handle2FAPress = () => totpEnabled ? handleDisable2FA() : handleSetup2FA();
 
-  const toggleLargerText = () => {
-    const newValue = !largerText;
-    saveAccessibilityPreferences({ largerText: newValue });
-  };
+  const toggleHighContrast = () => saveAccessibilityPreferences({ highContrast: !highContrast });
+  const toggleLargerText   = () => saveAccessibilityPreferences({ largerText: !largerText });
 
   const handleSignOut = async () => {
     try {
@@ -193,607 +267,443 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  const handleEditProfile = () => navigation.navigate("EditProfile");
-  const handleChangePassword = () => navigation.navigate("ChangePassword");
-  const handleManageSymbols = () => navigation.navigate("ManageSymbols");
+  const handleEditProfile     = () => navigation.navigate("EditProfile");
+  const handleChangePassword  = () => navigation.navigate("ChangePassword");
+  const handleManageSymbols   = () => navigation.navigate("ManageSymbols");
   const handleSymbolAnalytics = () => navigation.navigate("SymbolAnalytics");
 
-  const get2FAStatusText = () => {
-    if (twoFALoading) return "Checking...";
-    if (totpEnabled) return "Google Authenticator Enabled";
-    return "Not set up";
-  };
+  // 2FA display helpers (unchanged)
+  const get2FAStatusText  = () => twoFALoading ? "Checking…" : totpEnabled ? "Google Authenticator Enabled" : "Not set up";
+  const get2FAStatusColor = () => twoFALoading ? COLORS.textSoft : totpEnabled ? COLORS.success : COLORS.warning;
+  const get2FAIcon        = () => totpEnabled ? "shield-checkmark" : "shield-outline";
+  const get2FAIconColor   = () => totpEnabled ? COLORS.success : COLORS.primary;
 
-  const get2FAStatusColor = () => {
-    if (twoFALoading) return "#666";
-    return totpEnabled ? "#4CAF50" : "#FF6B35";
-  };
-
-  const get2FAActionText = () => {
-    return totpEnabled ? "Disable Google Authenticator" : "Set Up Google Authenticator";
-  };
-
-  const get2FADescription = () => {
-    return totpEnabled 
-      ? "Tap to disable " 
-      : "Add extra security with Google Authenticator";
-  };
-
-  const get2FAIcon = () => {
-    return totpEnabled ? "shield-checkmark" : "shield-outline";
-  };
-
-  const handle2FAPress = () => {
-    if (totpEnabled) {
-      // If TOTP is already enabled, show disable option
-      handleDisable2FA();
-    } else {
-      // Navigate to TOTP setup
-      handleSetup2FA();
-    }
-  };
-
+  // ── Loading ───────────────────────────────────────────────────
   if (loading) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#3da49a" />
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
+  const dynName    = largerText ? 22 : 20;
+  const dynEmail   = largerText ? 15 : 13;
+  const dynBtnText = largerText ? 16 : 14;
+
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={{ paddingBottom: 40 }}
-      accessibilityRole="main"
-      accessibilityLabel="Profile settings"
-    >
-      {/* Top header */}
-      <View style={[styles.header, { backgroundColor: theme.primary }]}>
-        <TouchableOpacity 
-          style={[
-            styles.headerBack,
-            highContrast && styles.highContrastBorder
-          ]} 
-          onPress={() => navigation.goBack()}
-          accessibilityLabel="Go back"
-          accessibilityRole="button"
-          accessibilityHint="Returns to previous screen"
-        >
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
+    <View style={styles.root}>
+      <StatusBar translucent backgroundColor={COLORS.primary} barStyle="light-content" />
 
-        <TouchableOpacity
-          style={[
-            styles.avatarWrapper,
-            highContrast && styles.highContrastBorder
-          ]}
-          onPress={handleEditProfile}
-          accessibilityLabel="Open edit profile"
-          accessibilityRole="button"
-          accessibilityHint="Opens screen to edit your profile information"
-        >
-          <Image
-            source={profilePic ? { uri: profilePic } : require("../assets/default_avatar.jpg")}
-            style={styles.avatar}
-            accessible={true}
-            accessibilityLabel="User profile picture"
-          />
-        </TouchableOpacity>
-
-        <Text style={[
-          styles.nameText,
-          largerText && styles.largerNameText
-        ]}>
-          {displayName || user?.displayName || "Rafiki User"}
-        </Text>
-        <Text style={[
-          styles.emailText,
-          largerText && styles.largerEmailText
-        ]}>
-          {user?.email || "No email available"}
-        </Text>
-
-        <TouchableOpacity 
-          style={[
-            styles.editButton,
-            highContrast && styles.highContrastBorder
-          ]} 
-          onPress={handleEditProfile}
-          accessibilityLabel="Edit profile"
-          accessibilityRole="button"
-          accessibilityHint="Opens screen to edit your profile information"
-        >
-          <Ionicons name="pencil" size={18} color="#0c0c0c" />
-          <Text style={[
-            styles.editButtonText,
-            largerText && styles.largerButtonText
-          ]}>
-            Edit Profile
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Body */}
-      <View style={styles.body}>
-        {/* Stats / Quick actions */}
-        <View style={styles.statRow}>
-          {/* Total Symbols */}
-          <View style={[
-            styles.statCard, 
-            { backgroundColor: theme.card },
-            highContrast && styles.highContrastBorder
-          ]}>
-            <Text style={[
-              styles.statNumber, 
-              { color: theme.text },
-              largerText && styles.largerStatNumber
-            ]}>
-              {symbols?.length ?? 0}
-            </Text>
-            <Text style={[
-              styles.statLabel, 
-              { color: theme.subtext },
-              largerText && styles.largerStatLabel
-            ]}>
-              Total Symbols
-            </Text>
-          </View>
-
-          {/* Manage Symbols */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        accessibilityRole="main"
+        accessibilityLabel="Profile settings"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Profile header ──────────────────────────────────── */}
+        <View style={styles.profileHeader}>
+          {/* Back button */}
           <TouchableOpacity
-            style={[
-              styles.statCard, 
-              styles.statAction, 
-              { backgroundColor: theme.card },
-              highContrast && styles.highContrastBorder
-            ]}
-            onPress={handleManageSymbols}
-            accessibilityLabel="Manage symbols"
+            style={[styles.headerBackBtn, highContrast && styles.highContrastBorder]}
+            onPress={() => navigation.goBack()}
+            accessibilityLabel="Go back"
             accessibilityRole="button"
-            accessibilityHint="Opens screen to add, edit, or delete communication symbols"
+            accessibilityHint="Returns to previous screen"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="images-outline" size={28} color="#3da49a" />
-            <Text style={[
-              styles.statLabel, 
-              { marginTop: 6, color: theme.subtext },
-              largerText && styles.largerStatLabel
-            ]}>
-              Manage Symbols
-            </Text>
+            <Ionicons name="arrow-back" size={22} color={COLORS.textOnPrimary} />
           </TouchableOpacity>
 
-          {/* Analytics */}
+          {/* Avatar */}
           <TouchableOpacity
-            style={[
-              styles.statCard, 
-              styles.statAction, 
-              { backgroundColor: theme.card },
-              highContrast && styles.highContrastBorder
-            ]}
-            onPress={handleSymbolAnalytics}
-            accessibilityLabel="View symbol analytics"
+            style={[styles.avatarRing, highContrast && styles.highContrastBorder]}
+            onPress={handleEditProfile}
+            accessibilityLabel="Open edit profile"
             accessibilityRole="button"
-            accessibilityHint="Opens screen showing symbol usage statistics"
+            accessibilityHint="Opens screen to edit your profile information"
           >
-            <Ionicons name="analytics-outline" size={28} color="#3da49a" />
-            <Text style={[
-              styles.statLabel, 
-              { marginTop: 6, color: theme.subtext },
-              largerText && styles.largerStatLabel
-            ]}>
-              Symbol Analytics
-            </Text>
+            <Image
+              source={profilePic ? { uri: profilePic } : require("../assets/default_avatar.jpg")}
+              style={styles.avatar}
+              accessible={true}
+              accessibilityLabel="User profile picture"
+            />
+            {/* Camera badge */}
+            <View style={styles.cameraBadge}>
+              <Ionicons name="pencil" size={10} color={COLORS.textOnPrimary} />
+            </View>
+          </TouchableOpacity>
+
+          <Text style={[styles.nameText, { fontSize: dynName }]}>
+            {displayName || user?.displayName || "Rafiki User"}
+          </Text>
+          <Text style={[styles.emailText, { fontSize: dynEmail }]}>
+            {user?.email || "No email available"}
+          </Text>
+
+          {/* Edit profile pill */}
+          <TouchableOpacity
+            style={[styles.editBtn, highContrast && styles.highContrastBorder]}
+            onPress={handleEditProfile}
+            accessibilityLabel="Edit profile"
+            accessibilityRole="button"
+            accessibilityHint="Opens screen to edit your profile information"
+            activeOpacity={0.85}
+          >
+            <Ionicons name="pencil-outline" size={14} color={COLORS.primary} />
+            <Text style={[styles.editBtnText, { fontSize: dynBtnText }]}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Security Section - Moved to top for importance */}
-        <View style={[
-          styles.section, 
-          { backgroundColor: theme.card },
-          highContrast && styles.highContrastBorder
-        ]}>
-          <Text style={[
-            styles.sectionTitle, 
-            { color: theme.text },
-            largerText && styles.largerSectionTitle
-          ]}>
-            Security
-          </Text>
-          
-          {/* Two-Factor Authentication (Google Authenticator) */}
-          <TouchableOpacity 
-            style={styles.row} 
-            onPress={handle2FAPress}
-            accessibilityLabel={get2FAActionText()}
-            accessibilityRole="button"
-            accessibilityHint={totpEnabled ? "Disables Google Authenticator" : "Sets up Google Authenticator"}
-          >
-            <View style={styles.rowLeft}>
-              <Ionicons 
-                name={get2FAIcon()} 
-                size={22} 
-                color={totpEnabled ? "#34A853" : "#3da49a"} 
-              />
-              <View style={{ marginLeft: 12 }}>
-                <Text style={[
-                  styles.rowTitle, 
-                  { color: theme.text },
-                  largerText && styles.largerRowTitle
-                ]}>
-                  Google Authenticator
-                </Text>
-                <Text style={[
-                  styles.rowSubtitle, 
-                  { color: theme.subtext },
-                  largerText && styles.largerRowSubtitle
-                ]}>
-                  {get2FADescription()}
-                </Text>
-                <Text style={[
-                  styles.statusText, 
-                  { color: get2FAStatusColor() },
-                  largerText && styles.largerStatusText
-                ]}>
-                  {get2FAStatusText()}
-                  {totpEnabled && " 🔒"}
-                </Text>
-              </View>
+        {/* ── Body ────────────────────────────────────────────── */}
+        <View style={styles.body}>
+
+          {/* Quick stats row */}
+          <View style={styles.statsRow}>
+            {/* Symbol count */}
+            <View style={[styles.quickStat, highContrast && styles.highContrastBorder]}>
+              <Text style={[styles.quickStatValue, largerText && { fontSize: 28 }]}>
+                {symbols?.length ?? 0}
+              </Text>
+              <Text style={[styles.quickStatLabel, largerText && { fontSize: 13 }]}>
+                Symbols
+              </Text>
             </View>
-            <View style={styles.rowRight}>
-              {twoFALoading ? (
-                <ActivityIndicator size="small" color="#3da49a" />
-              ) : (
-                <Ionicons 
-                  name={totpEnabled ? "remove-circle-outline" : "add-circle-outline"} 
-                  size={22} 
-                  color={totpEnabled ? "#e53935" : "#3da49a"} 
+
+            {/* Manage Symbols shortcut */}
+            <TouchableOpacity
+              style={[styles.quickAction, highContrast && styles.highContrastBorder]}
+              onPress={handleManageSymbols}
+              accessibilityLabel="Manage symbols"
+              accessibilityRole="button"
+              accessibilityHint="Opens screen to add, edit, or delete communication symbols"
+              activeOpacity={0.85}
+            >
+              <Ionicons name="images-outline" size={24} color={COLORS.primary} />
+              <Text style={[styles.quickActionLabel, largerText && { fontSize: 13 }]}>
+                Manage
+              </Text>
+            </TouchableOpacity>
+
+            {/* Analytics shortcut */}
+            <TouchableOpacity
+              style={[styles.quickAction, highContrast && styles.highContrastBorder]}
+              onPress={handleSymbolAnalytics}
+              accessibilityLabel="View symbol analytics"
+              accessibilityRole="button"
+              accessibilityHint="Opens screen showing symbol usage statistics"
+              activeOpacity={0.85}
+            >
+              <Ionicons name="analytics-outline" size={24} color={COLORS.primary} />
+              <Text style={[styles.quickActionLabel, largerText && { fontSize: 13 }]}>
+                Analytics
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* ── Security ────────────────────────────────────── */}
+          <Section title="Security" largerText={largerText} highContrast={highContrast}>
+            {/* 2FA row */}
+            <RowItem
+              icon={get2FAIcon()}
+              iconColor={get2FAIconColor()}
+              title="Google Authenticator"
+              subtitle={get2FAStatusText()}
+              largerText={largerText}
+              onPress={handle2FAPress}
+              right={
+                twoFALoading ? (
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                ) : (
+                  <View style={[
+                    styles.statusPill,
+                    totpEnabled ? styles.statusPillOn : styles.statusPillOff,
+                  ]}>
+                    <Text style={[
+                      styles.statusPillText,
+                      totpEnabled ? styles.statusPillTextOn : styles.statusPillTextOff,
+                      largerText && { fontSize: 12 },
+                    ]}>
+                      {totpEnabled ? "On" : "Off"}
+                    </Text>
+                  </View>
+                )
+              }
+            />
+            {/* Change password row */}
+            <RowItem
+              icon="lock-closed-outline"
+              title="Change Password"
+              subtitle="Update your account password"
+              largerText={largerText}
+              onPress={handleChangePassword}
+              last
+              right={<Ionicons name="chevron-forward" size={18} color={COLORS.textSoft} />}
+            />
+          </Section>
+
+          {/* ── Appearance ──────────────────────────────────── */}
+          <Section title="Appearance" largerText={largerText} highContrast={highContrast}>
+            <RowItem
+              icon={isDark ? "moon" : "sunny-outline"}
+              iconColor={isDark ? "#7C5CBF" : "#F5A623"}
+              title="Dark Mode"
+              subtitle={isDark ? "Enabled" : "Disabled"}
+              largerText={largerText}
+              last
+              right={
+                <Switch
+                  value={isDark}
+                  onValueChange={toggleTheme}
+                  trackColor={{ false: COLORS.border, true: COLORS.switchActive }}
+                  thumbColor={COLORS.card}
+                  accessibilityLabel="Dark mode toggle switch"
+                  accessibilityRole="switch"
+                  accessibilityState={{ checked: isDark }}
+                  accessibilityHint="Turns dark mode on or off"
                 />
-              )}
-            </View>
-          </TouchableOpacity>
-
-          {/* Change Password */}
-          <TouchableOpacity 
-            style={styles.row} 
-            onPress={handleChangePassword}
-            accessibilityLabel="Change password"
-            accessibilityRole="button"
-            accessibilityHint="Opens screen to update your account password"
-          >
-            <View style={styles.rowLeft}>
-              <Ionicons name="lock-closed-outline" size={22} color="#3da49a" />
-              <View style={{ marginLeft: 12 }}>
-                <Text style={[
-                  styles.rowTitle, 
-                  { color: theme.text },
-                  largerText && styles.largerRowTitle
-                ]}>
-                  Change Password
-                </Text>
-                <Text style={[
-                  styles.rowSubtitle, 
-                  { color: theme.subtext },
-                  largerText && styles.largerRowSubtitle
-                ]}>
-                  Update your account password
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Rest of your existing sections remain the same... */}
-        {/* Theme Settings */}
-        <View style={[
-          styles.section, 
-          { backgroundColor: theme.card },
-          highContrast && styles.highContrastBorder
-        ]}>
-          <Text style={[
-            styles.sectionTitle, 
-            { color: theme.text },
-            largerText && styles.largerSectionTitle
-          ]}>
-            Appearance
-          </Text>
-          <View style={styles.row}>
-            <View style={styles.rowLeft}>
-              <Ionicons 
-                name={isDark ? "moon" : "sunny"} 
-                size={22} 
-                color={isDark ? "#bb86fc" : "#ffa000"} 
-                accessible={true}
-                accessibilityLabel={isDark ? "Dark mode enabled" : "Light mode enabled"}
-              />
-              <View style={{ marginLeft: 12 }}>
-                <Text style={[
-                  styles.rowTitle, 
-                  { color: theme.text },
-                  largerText && styles.largerRowTitle
-                ]}>
-                  Dark Mode
-                </Text>
-                <Text style={[
-                  styles.rowSubtitle, 
-                  { color: theme.subtext },
-                  largerText && styles.largerRowSubtitle
-                ]}>
-                  {isDark ? "Enabled" : "Disabled"}
-                </Text>
-              </View>
-            </View>
-            <Switch 
-              value={isDark} 
-              onValueChange={toggleTheme} 
-              trackColor={{ false: "#767577", true: "#3da49a" }} 
-              thumbColor="#f4f3f4"
-              accessibilityLabel="Dark mode toggle switch"
-              accessibilityRole="switch"
-              accessibilityState={{ checked: isDark }}
-              accessibilityHint="Turns dark mode on or off for better visibility"
+              }
             />
-          </View>
-        </View>
+          </Section>
 
-        {/* Accessibility Settings */}
-        <View style={[
-          styles.section, 
-          { backgroundColor: theme.card },
-          highContrast && styles.highContrastBorder
-        ]}>
-          <Text style={[
-            styles.sectionTitle, 
-            { color: theme.text },
-            largerText && styles.largerSectionTitle
-          ]}>
-            Accessibility
-          </Text>
-          
-          {/* High Contrast */}
-          <View style={styles.row}>
-            <View style={styles.rowLeft}>
-              <Ionicons name="contrast-outline" size={22} color="#3da49a" />
-              <View style={{ marginLeft: 12 }}>
-                <Text style={[
-                  styles.rowTitle, 
-                  { color: theme.text },
-                  largerText && styles.largerRowTitle
-                ]}>
-                  High Contrast
-                </Text>
-                <Text style={[
-                  styles.rowSubtitle, 
-                  { color: theme.subtext },
-                  largerText && styles.largerRowSubtitle
-                ]}>
-                  Enhanced visibility for low vision
-                </Text>
-              </View>
-            </View>
-            <Switch 
-              value={highContrast} 
-              onValueChange={toggleHighContrast}
-              trackColor={{ false: "#767577", true: "#3da49a" }} 
-              thumbColor="#f4f3f4"
-              accessibilityLabel="High contrast mode toggle"
-              accessibilityRole="switch"
-              accessibilityState={{ checked: highContrast }}
-              accessibilityHint="Turns high contrast mode on or off"
+          {/* ── Accessibility ────────────────────────────────── */}
+          <Section title="Accessibility" largerText={largerText} highContrast={highContrast}>
+            <RowItem
+              icon="contrast-outline"
+              title="High Contrast"
+              subtitle="Enhanced visibility for low vision"
+              largerText={largerText}
+              right={
+                <Switch
+                  value={highContrast}
+                  onValueChange={toggleHighContrast}
+                  trackColor={{ false: COLORS.border, true: COLORS.switchActive }}
+                  thumbColor={COLORS.card}
+                  accessibilityLabel="High contrast mode toggle"
+                  accessibilityRole="switch"
+                  accessibilityState={{ checked: highContrast }}
+                  accessibilityHint="Turns high contrast mode on or off"
+                />
+              }
             />
-          </View>
-
-          {/* Larger Text */}
-          <View style={styles.row}>
-            <View style={styles.rowLeft}>
-              <Ionicons name="text-outline" size={22} color="#3da49a" />
-              <View style={{ marginLeft: 12 }}>
-                <Text style={[
-                  styles.rowTitle, 
-                  { color: theme.text },
-                  largerText && styles.largerRowTitle
-                ]}>
-                  Larger Text
-                </Text>
-                <Text style={[
-                  styles.rowSubtitle, 
-                  { color: theme.subtext },
-                  largerText && styles.largerRowSubtitle
-                ]}>
-                  Increase text size throughout app
-                </Text>
-              </View>
-            </View>
-            <Switch 
-              value={largerText} 
-              onValueChange={toggleLargerText}
-              trackColor={{ false: "#767577", true: "#3da49a" }} 
-              thumbColor="#f4f3f4"
-              accessibilityLabel="Larger text toggle"
-              accessibilityRole="switch"
-              accessibilityState={{ checked: largerText }}
-              accessibilityHint="Turns larger text mode on or off"
+            <RowItem
+              icon="text-outline"
+              title="Larger Text"
+              subtitle="Increase text size throughout app"
+              largerText={largerText}
+              last
+              right={
+                <Switch
+                  value={largerText}
+                  onValueChange={toggleLargerText}
+                  trackColor={{ false: COLORS.border, true: COLORS.switchActive }}
+                  thumbColor={COLORS.card}
+                  accessibilityLabel="Larger text toggle"
+                  accessibilityRole="switch"
+                  accessibilityState={{ checked: largerText }}
+                  accessibilityHint="Turns larger text mode on or off"
+                />
+              }
             />
-          </View>
-        </View>
+          </Section>
 
-        {/* Sign Out */}
-        <View style={[
-          styles.section, 
-          { backgroundColor: theme.card },
-          highContrast && styles.highContrastBorder
-        ]}>
-          <TouchableOpacity 
-            style={[
-              styles.signOutBtn,
-              highContrast && styles.highContrastBorder
-            ]} 
+          {/* ── Sign out ─────────────────────────────────────── */}
+          <TouchableOpacity
+            style={[styles.signOutBtn, highContrast && styles.highContrastBorder]}
             onPress={handleSignOut}
             accessibilityLabel="Sign out"
             accessibilityRole="button"
             accessibilityHint="Signs you out of your account"
+            activeOpacity={0.85}
           >
-            <Ionicons name="log-out-outline" size={18} color="#fff" />
-            <Text style={[
-              styles.signOutText,
-              largerText && styles.largerButtonText
-            ]}>
-              Sign Out
-            </Text>
+            <Ionicons name="log-out-outline" size={18} color={COLORS.textSoft} />
+            <Text style={[styles.signOutText, largerText && { fontSize: 16 }]}>Sign Out</Text>
           </TouchableOpacity>
+
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
-// Your existing styles remain exactly the same...
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  center: { justifyContent: "center", alignItems: "center" },
+  // ── Root ─────────────────────────────────────────────────────
+  root: { flex: 1, backgroundColor: COLORS.bg },
+  loadingScreen: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: COLORS.bg },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 48 },
 
-  header: {
-    paddingTop: 40,
-    paddingBottom: 24,
+  // ── Profile header ────────────────────────────────────────────
+  profileHeader: {
+    backgroundColor: COLORS.primary,
+    paddingTop: Platform.OS === "ios" ? 54 : 44,
+    paddingBottom: 28,
     alignItems: "center",
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    borderBottomLeftRadius: RADIUS.xl,
+    borderBottomRightRadius: RADIUS.xl,
   },
-  headerBack: {
+  headerBackBtn: {
     position: "absolute",
     left: 16,
-    top: 44,
-    padding: 8,
+    top: Platform.OS === "ios" ? 54 : 44,
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.full,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  avatarWrapper: {
-    marginTop: 6,
-    width: 110,
-    height: 110,
-    borderRadius: 60,
-    borderWidth: 4,
-    borderColor: "rgba(255,255,255,0.3)",
-    overflow: "hidden",
-    backgroundColor: "#fff",
+  avatarRing: {
+    width: 100,
+    height: 100,
+    borderRadius: RADIUS.full,
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.5)",
+    overflow: "visible",
+    marginBottom: 4,
+    position: "relative",
   },
-  avatar: { width: "100%", height: "100%" },
-
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: RADIUS.full,
+  },
+  cameraBadge: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 22,
+    height: 22,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.primaryDark,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: COLORS.textOnPrimary,
+  },
   nameText: {
-    marginTop: 12,
-    color: "#fff",
-    fontSize: 20,
+    color: COLORS.textOnPrimary,
     fontWeight: "700",
+    marginTop: 10,
     textAlign: "center",
+    letterSpacing: 0.2,
   },
   emailText: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 14,
-    marginTop: 6,
+    color: "rgba(255,255,255,0.8)",
+    marginTop: 4,
+    fontWeight: "400",
   },
-  editButton: {
+  editBtn: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 12,
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
+    gap: 6,
+    backgroundColor: COLORS.card,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: RADIUS.full,
+    marginTop: 14,
   },
-  editButtonText: {
-    marginLeft: 8,
+  editBtnText: {
     fontWeight: "600",
-    color: "#0c0c0c",
-    fontSize: 14,
+    color: COLORS.primary,
   },
 
-  body: { padding: 18 },
-  statRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 18 },
-  statCard: {
-    flex: 1,
-    padding: 12,
-    marginHorizontal: 6,
-    borderRadius: 12,
-    alignItems: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  statNumber: { fontSize: 20, fontWeight: "800" },
-  statLabel: { fontSize: 13 },
-  statAction: { justifyContent: "center" },
-
-  section: {
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 12,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12 },
-
-  row: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "space-between", 
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  rowLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
-  rowRight: { flexDirection: "row", alignItems: "center" },
-  rowTitle: { fontSize: 16, fontWeight: "600" },
-  rowSubtitle: { fontSize: 12, marginTop: 2 },
-  statusText: {
-    fontSize: 12,
-    marginTop: 2,
-    fontWeight: '500',
+  // ── Body ──────────────────────────────────────────────────────
+  body: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
 
-  signOutBtn: {
-    backgroundColor: "#e53935",
-    paddingVertical: 12,
-    borderRadius: 10,
+  // ── Quick stats row ───────────────────────────────────────────
+  statsRow: {
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
   },
-  signOutText: { color: "#fff", fontWeight: "700", marginLeft: 8, fontSize: 16 },
+  quickStat: {
+    flex: 1,
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.md,
+    paddingVertical: 14,
+    alignItems: "center",
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  quickStatValue: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  quickStatLabel: {
+    fontSize: 12,
+    color: COLORS.textSoft,
+    fontWeight: "500",
+  },
+  quickAction: {
+    flex: 1,
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.md,
+    paddingVertical: 14,
+    alignItems: "center",
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+    gap: 4,
+  },
+  quickActionLabel: {
+    fontSize: 12,
+    color: COLORS.textSoft,
+    fontWeight: "600",
+  },
 
-  // Accessibility Styles
+  // ── 2FA status pill ───────────────────────────────────────────
+  statusPill: {
+    borderRadius: RADIUS.full,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    flexShrink: 0,
+  },
+  statusPillOn: { backgroundColor: COLORS.successBg },
+  statusPillOff: { backgroundColor: COLORS.warningBg },
+  statusPillText: { fontSize: 11, fontWeight: "700" },
+  statusPillTextOn: { color: COLORS.success },
+  statusPillTextOff: { color: COLORS.warning },
+
+  // ── Sign out ──────────────────────────────────────────────────
+  signOutBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.lg,
+    paddingVertical: 14,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  signOutText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.textSoft,
+  },
+
+  // ── Accessibility ─────────────────────────────────────────────
   highContrastBorder: {
     borderWidth: 2,
-    borderColor: '#FF0000',
-  },
-  largerNameText: {
-    fontSize: 22,
-  },
-  largerEmailText: {
-    fontSize: 16,
-  },
-  largerButtonText: {
-    fontSize: 16,
-  },
-  largerStatNumber: {
-    fontSize: 22,
-  },
-  largerStatLabel: {
-    fontSize: 14,
-  },
-  largerSectionTitle: {
-    fontSize: 18,
-  },
-  largerRowTitle: {
-    fontSize: 18,
-  },
-  largerRowSubtitle: {
-    fontSize: 14,
-  },
-  largerStatusText: {
-    fontSize: 14,
+    borderColor: COLORS.primary,
   },
 });

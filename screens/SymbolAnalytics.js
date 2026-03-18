@@ -1,440 +1,507 @@
+// screens/SymbolAnalytics.js - REVAMPED UI (autism-friendly, modern, clean)
 import React from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  Image, 
-  TouchableOpacity, 
-  SafeAreaView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  SafeAreaView,
   ImageBackground,
   StatusBar,
   Platform,
-  Alert
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSymbols } from "../context/SymbolsContext";
 import { useAccessibility } from "../context/AccessibilityContext";
+
+// ── Design tokens (consistent across all screens) ───────────────
+const COLORS = {
+  bg: "#F4F8F7",
+  card: "#FFFFFF",
+  primary: "#4AADA3",
+  primaryLight: "#E6F4F3",
+  primaryDark: "#37877E",
+  text: "#2C3E3D",
+  textSoft: "#6B8280",
+  textOnPrimary: "#FFFFFF",
+  border: "#D6E8E6",
+  shadow: "#2C3E3D",
+  overlayBg: "rgba(244, 248, 247, 0.72)",
+  // Stat cards
+  statBg: "#E6F4F3",
+  statValue: "#2C3E3D",
+  statLabel: "#6B8280",
+  // Reset timer
+  timerBg: "#F0FAF9",
+  timerBorder: "#C2E5E2",
+  // Rank medal colours
+  gold: "#F5A623",
+  silver: "#9B9B9B",
+  bronze: "#CD7F32",
+};
+
+const RADIUS = { sm: 10, md: 14, lg: 18, full: 999 };
+
+// Rank badge — medal colours for top 3, muted pill for the rest
+const RankBadge = ({ rank, largerText }) => {
+  const isGold   = rank === 1;
+  const isSilver = rank === 2;
+  const isBronze = rank === 3;
+  const medalColor = isGold ? COLORS.gold : isSilver ? COLORS.silver : isBronze ? COLORS.bronze : null;
+  const medalEmoji = isGold ? "🥇" : isSilver ? "🥈" : isBronze ? "🥉" : null;
+
+  if (medalEmoji) {
+    return (
+      <Text style={{ fontSize: largerText ? 28 : 24, width: 36, textAlign: "center" }}>
+        {medalEmoji}
+      </Text>
+    );
+  }
+  return (
+    <View style={rankStyles.pill}>
+      <Text style={[rankStyles.pillText, largerText && { fontSize: 14 }]}>{rank}</Text>
+    </View>
+  );
+};
+const rankStyles = StyleSheet.create({
+  pill: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pillText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: COLORS.primary,
+  },
+});
+// ────────────────────────────────────────────────────────────────
 
 export default function SymbolAnalytics({ navigation }) {
   const { symbols, resetUsageCounts, lastResetDate } = useSymbols();
   const { highContrast, largerText } = useAccessibility();
 
   const totalSymbols = symbols.length;
-  
-  // Get top symbols sorted by usage count
+  const totalClicks = symbols.reduce((sum, s) => sum + (s.usageCount || 0), 0);
+
+  // Top 5 sorted by usage (unchanged logic)
   const topSymbols = [...symbols]
     .sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0))
     .slice(0, 5);
 
-  // Check if we need to reset (weekly)
-  /*const checkAndResetAnalytics = () => {
-    const now = new Date();
-    const lastReset = lastResetDate ? new Date(lastResetDate) : new Date(0);
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    if (lastReset < oneWeekAgo) {
-      resetUsageCounts();
-    }
-  };*/
-
-  // Check for reset when component mounts
-  /*React.useEffect(() => {
-    checkAndResetAnalytics();
-  }, []);*/
-
-  const getRankIcon = (rank) => {
-    switch (rank) {
-      case 1:
-        return "🥇";
-      case 2:
-        return "🥈";
-      case 3:
-        return "🥉";
-      default:
-        return `${rank}.`;
-    }
-  };
-
+  // Time until reset (unchanged logic)
   const getTimeUntilNextReset = () => {
     const now = new Date();
     const lastReset = lastResetDate ? new Date(lastResetDate) : new Date();
     const nextReset = new Date(lastReset.getTime() + 7 * 24 * 60 * 60 * 1000);
     const timeDiff = nextReset - now;
-    
     const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
     return { days, hours, nextReset };
   };
-
   const { days, hours, nextReset } = getTimeUntilNextReset();
 
+  const formatDate = (date) =>
+    date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+  // Reset handler (unchanged logic)
   const handleManualReset = () => {
     Alert.alert(
       "Reset Analytics",
       "Are you sure you want to reset all symbol usage counts? This will start a new weekly tracking period.",
       [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: () => resetUsageCounts()
-        }
+        { text: "Cancel", style: "cancel" },
+        { text: "Reset", style: "destructive", onPress: () => resetUsageCounts() },
       ]
     );
   };
 
-  const formatDate = (date) => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+  const dynHeaderTitle = largerText ? 20 : 18;
+  const dynBody       = largerText ? 16 : 14;
+  const dynSmall      = largerText ? 14 : 12;
+  const dynSubtitle   = largerText ? 18 : 15;
+  const dynSymbolName = largerText ? 18 : 15;
+  const dynSymbolCount= largerText ? 16 : 13;
+
+  // ── Symbol card ───────────────────────────────────────────────
+  const renderItem = ({ item, index }) => {
+    const usage = item.usageCount || 0;
+    const maxUsage = topSymbols[0]?.usageCount || 1;
+    const barWidth = maxUsage > 0 ? Math.max((usage / maxUsage) * 100, 4) : 4;
+
+    return (
+      <View
+        style={[styles.symbolCard, highContrast && styles.highContrastBorder]}
+        accessible={true}
+        accessibilityLabel={`Rank ${index + 1}: ${item.label}, used ${usage} times`}
+        accessibilityRole="listitem"
+      >
+        {/* Rank */}
+        <RankBadge rank={index + 1} largerText={largerText} />
+
+        {/* Image */}
+        <Image
+          source={{ uri: item.image }}
+          style={styles.symbolImage}
+          resizeMode="contain"
+          accessible={true}
+          accessibilityLabel={`Symbol image for ${item.label}`}
+        />
+
+        {/* Info + bar */}
+        <View style={styles.symbolInfo}>
+          <Text style={[styles.symbolName, { fontSize: dynSymbolName }]} numberOfLines={1}>
+            {item.label}
+          </Text>
+
+          {/* Usage bar */}
+          <View style={styles.barTrack}>
+            <View style={[styles.barFill, { width: `${barWidth}%` }]} />
+          </View>
+
+          <Text style={[styles.symbolCount, { fontSize: dynSymbolCount }]}>
+            {usage} {usage === 1 ? "tap" : "taps"}
+          </Text>
+        </View>
+      </View>
+    );
   };
 
   return (
     <View style={styles.container}>
-      {/* Teal Header - Fixed to cover status bar area */}
-      <View style={[styles.header, { backgroundColor: '#009688' }]}>
+      {/* ── Header ──────────────────────────────────────────────── */}
+      <View style={styles.header}>
         <StatusBar
           translucent
-          backgroundColor="#009688"
+          backgroundColor={COLORS.primary}
           barStyle="light-content"
         />
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView>
           <View style={styles.headerContent}>
-            <TouchableOpacity 
-              style={[
-                styles.headerBack,
-                highContrast && styles.highContrastBorder
-              ]} 
+            <TouchableOpacity
+              style={[styles.headerIconBtn, highContrast && styles.highContrastBorder]}
               onPress={() => {
-                if (navigation.canGoBack()) {
-                  navigation.goBack();
-                } else {
-                  navigation.navigate("Home");
-                }
+                if (navigation.canGoBack()) navigation.goBack();
+                else navigation.navigate("Home");
               }}
               accessibilityLabel="Go back"
               accessibilityRole="button"
               accessibilityHint="Returns to previous screen"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="arrow-back" size={22} color="#fff" />
+              <Ionicons name="arrow-back" size={22} color={COLORS.textOnPrimary} />
             </TouchableOpacity>
-            <Text style={[
-              styles.headerTitle,
-              largerText && styles.largerHeaderTitle
-            ]}>
+
+            <Text style={[styles.headerTitle, { fontSize: dynHeaderTitle }]}>
               Symbol Analytics
             </Text>
-            <TouchableOpacity 
-              style={styles.resetButton}
+
+            <TouchableOpacity
+              style={styles.headerIconBtn}
               onPress={handleManualReset}
               accessibilityLabel="Reset analytics"
               accessibilityRole="button"
               accessibilityHint="Resets all symbol usage counts and starts new tracking period"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="refresh" size={20} color="#fff" />
+              <Ionicons name="refresh-outline" size={20} color={COLORS.textOnPrimary} />
             </TouchableOpacity>
           </View>
         </SafeAreaView>
       </View>
 
-      {/* Background Image without Dark Overlay */}
+      {/* ── Body ────────────────────────────────────────────────── */}
       <ImageBackground
         source={require("../assets/rafiki_background.png")}
         style={styles.background}
         resizeMode="cover"
       >
-        <View style={styles.content}>
-          {/* Reset Info Card */}
-          <View style={[
-            styles.resetInfoCard,
-            highContrast && styles.highContrastBorder
-          ]}>
-            <Text style={[
-              styles.resetInfoText,
-              largerText && styles.largerResetInfoText
-            ]}>
-              📊 Weekly Analytics
-            </Text>
-            <Text style={[
-              styles.resetSubText,
-              largerText && styles.largerResetSubText
-            ]}>
-              Resets in: {days}d {hours}h
-            </Text>
-            <Text style={[
-              styles.resetDateText,
-              largerText && styles.largerResetDateText
-            ]}>
-              Next reset: {formatDate(nextReset)}
-            </Text>
-          </View>
+        <View style={styles.overlay} />
 
-          {/* Summary Card */}
-          <View style={[
-            styles.summaryCard,
-            highContrast && styles.highContrastBorder
-          ]}>
-            <Text style={[
-              styles.summaryText,
-              largerText && styles.largerSummaryText
-            ]}>
-              Total Symbols: <Text style={styles.highlight}>{totalSymbols}</Text>
-            </Text>
-          </View>
-
-          {/* Top Symbols */}
-          {symbols.length === 0 ? (
-            <Text style={[
-              styles.info,
-              largerText && styles.largerInfo
-            ]}>
-              No symbols added yet.
-            </Text>
-          ) : (
+        <FlatList
+          data={topSymbols}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContent}
+          accessibilityLabel="Top 5 most used symbols list"
+          accessibilityRole="list"
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
             <>
-              <Text style={[
-                styles.subtitle,
-                largerText && styles.largerSubtitle
-              ]}>
-                Top 10 Most Used Symbols
-              </Text>
-              <FlatList
-                data={topSymbols}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item, index }) => (
-                  <View 
-                    style={[
-                      styles.symbolCard,
-                      highContrast && styles.highContrastBorder
-                    ]}
-                    accessible={true}
-                    accessibilityLabel={`Rank ${index + 1}: ${item.label}, used ${item.usageCount || 0} times`}
-                    accessibilityRole="listitem"
-                  >
-                    <Text style={[
-                      styles.rank,
-                      largerText && styles.largerRank
-                    ]}>
-                      {getRankIcon(index + 1)}
+              {/* ── Stat pills row ───────────────────────────── */}
+              <View style={styles.statsRow}>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statValue, { fontSize: largerText ? 28 : 24 }]}>
+                    {totalSymbols}
+                  </Text>
+                  <Text style={[styles.statLabel, { fontSize: dynSmall }]}>Symbols</Text>
+                </View>
+
+                <View style={[styles.statCard, styles.statCardAccent]}>
+                  <Text style={[styles.statValueAccent, { fontSize: largerText ? 28 : 24 }]}>
+                    {totalClicks}
+                  </Text>
+                  <Text style={[styles.statLabelAccent, { fontSize: dynSmall }]}>Total Taps</Text>
+                </View>
+              </View>
+
+              {/* ── Reset timer card ─────────────────────────── */}
+              <View style={[styles.timerCard, highContrast && styles.highContrastBorder]}>
+                <View style={styles.timerLeft}>
+                  <Ionicons name="time-outline" size={18} color={COLORS.primary} />
+                  <View>
+                    <Text style={[styles.timerTitle, { fontSize: dynBody }]}>
+                      Weekly Reset
                     </Text>
-                    <Image
-                      source={{ uri: item.image }}
-                      style={styles.symbolImage}
-                      accessible={true}
-                      accessibilityLabel={`Symbol image for ${item.label}`}
-                    />
-                    <View style={styles.symbolInfo}>
-                      <Text style={[
-                        styles.symbolName,
-                        largerText && styles.largerSymbolName
-                      ]}>
-                        {item.label}
-                      </Text>
-                      <Text style={[
-                        styles.symbolCount,
-                        largerText && styles.largerSymbolCount
-                      ]}>
-                        {item.usageCount || 0} clicks
-                      </Text>
-                    </View>
+                    <Text style={[styles.timerDate, { fontSize: dynSmall }]}>
+                      {formatDate(nextReset)}
+                    </Text>
                   </View>
-                )}
-                contentContainerStyle={styles.flatListContent}
-                accessibilityLabel="Top 5 most used symbols list"
-                accessibilityRole="list"
-              />
+                </View>
+                <View style={styles.timerBadge}>
+                  <Text style={[styles.timerBadgeText, { fontSize: dynSmall }]}>
+                    {days}d {hours}h
+                  </Text>
+                </View>
+              </View>
+
+              {/* ── List heading ─────────────────────────────── */}
+              {symbols.length > 0 && (
+                <Text style={[styles.sectionTitle, { fontSize: dynSubtitle }]}>
+                  Top {topSymbols.length} Most Used
+                </Text>
+              )}
             </>
-          )}
-        </View>
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyCard}>
+              <Ionicons name="bar-chart-outline" size={40} color={COLORS.primary} style={{ marginBottom: 10 }} />
+              <Text style={[styles.emptyText, { fontSize: dynBody + 2 }]}>No data yet</Text>
+              <Text style={[styles.emptyHint, { fontSize: dynBody }]}>
+                Usage stats appear once the child starts tapping symbols
+              </Text>
+            </View>
+          }
+        />
       </ImageBackground>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    // Header now covers status bar area
-  },
-  safeArea: {
-    // Safe area for notch devices
-  },
+  container: { flex: 1 },
+
+  // ── Header ───────────────────────────────────────────────────
+  header: { backgroundColor: COLORS.primary },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 8 : 16,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === "ios" ? 8 : 16,
+    paddingBottom: 18,
   },
-  headerBack: { 
-    padding: 8 
-  },
-  headerTitle: { 
-    color: "#fff", 
-    fontSize: 18, 
-    fontWeight: "700" 
-  },
-  resetButton: {
-    padding: 8,
+  headerIconBtn: {
     width: 40,
-    alignItems: 'center',
+    height: 40,
+    borderRadius: RADIUS.full,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  headerPlaceholder: { 
-    width: 40 
+  headerTitle: {
+    color: COLORS.textOnPrimary,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
-  background: {
-    flex: 1,
+
+  // ── Background & overlay ─────────────────────────────────────
+  background: { flex: 1 },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.overlayBg,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
+
+  // ── List container ────────────────────────────────────────────
+  listContent: {
+    paddingHorizontal: 16,
     paddingTop: 16,
-  },
-  resetInfoCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  resetInfoText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#009688",
-    marginBottom: 4,
-  },
-  resetSubText: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 2,
-  },
-  resetDateText: {
-    fontSize: 12,
-    color: "#888",
-    textAlign: "center",
-  },
-  summaryCard: {
-    backgroundColor: "rgb(231, 226, 226)",
-    borderRadius: 16,
-    padding: 20,
-    alignItems: "center",
-    marginBottom: 25,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  summaryText: {
-    fontSize: 18,
-    color: "#444",
-  },
-  highlight: {
-    fontWeight: "bold",
-    color: "#050b0bff",
-  },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#0b0a0aff",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  symbolCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgb(231, 226, 226)",
-    borderRadius: 18,
-    padding: 12,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  rank: {
-    fontSize: 24,
-    width: 40,
-    textAlign: "center",
-  },
-  symbolImage: {
-    width: 55,
-    height: 55,
-    borderRadius: 12,
-    marginHorizontal: 8,
-  },
-  symbolInfo: {
-    flex: 1,
-  },
-  symbolName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  symbolCount: {
-    fontSize: 14,
-    color: "#777",
-  },
-  info: {
-    textAlign: "center",
-    fontSize: 16,
-    color: "#ffffff",
-    marginTop: 20,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10
-  },
-  flatListContent: {
     paddingBottom: 40,
   },
 
-  // Accessibility Styles
+  // ── Stat cards row ────────────────────────────────────────────
+  statsRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 12,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.md,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  statCardAccent: {
+    backgroundColor: COLORS.primary,
+  },
+  statValue: {
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  statValueAccent: {
+    fontWeight: "700",
+    color: COLORS.textOnPrimary,
+    marginBottom: 2,
+  },
+  statLabel: {
+    color: COLORS.textSoft,
+    fontWeight: "500",
+  },
+  statLabelAccent: {
+    color: "rgba(255,255,255,0.8)",
+    fontWeight: "500",
+  },
+
+  // ── Timer card ────────────────────────────────────────────────
+  timerCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: COLORS.timerBg,
+    borderWidth: 1,
+    borderColor: COLORS.timerBorder,
+    borderRadius: RADIUS.md,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 20,
+  },
+  timerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+  },
+  timerTitle: {
+    fontWeight: "600",
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  timerDate: {
+    color: COLORS.textSoft,
+  },
+  timerBadge: {
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: RADIUS.full,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  timerBadgeText: {
+    color: COLORS.primaryDark,
+    fontWeight: "700",
+  },
+
+  // ── Section title ─────────────────────────────────────────────
+  sectionTitle: {
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 12,
+    letterSpacing: 0.2,
+  },
+
+  // ── Symbol card ───────────────────────────────────────────────
+  symbolCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.md,
+    padding: 12,
+    marginBottom: 10,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+    gap: 10,
+    minHeight: 72,
+  },
+  symbolImage: {
+    width: 52,
+    height: 52,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.primaryLight,
+    flexShrink: 0,
+  },
+  symbolInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  symbolName: {
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  // Usage bar
+  barTrack: {
+    height: 6,
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: RADIUS.full,
+    overflow: "hidden",
+  },
+  barFill: {
+    height: "100%",
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.full,
+  },
+  symbolCount: {
+    color: COLORS.textSoft,
+    fontWeight: "500",
+  },
+
+  // ── Empty state ───────────────────────────────────────────────
+  emptyCard: {
+    backgroundColor: "rgba(255,255,255,0.93)",
+    borderRadius: RADIUS.lg,
+    padding: 32,
+    alignItems: "center",
+    marginTop: 8,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  emptyText: {
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 6,
+  },
+  emptyHint: {
+    color: COLORS.textSoft,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+
+  // ── Accessibility ─────────────────────────────────────────────
   highContrastBorder: {
     borderWidth: 2,
-    borderColor: '#FF0000',
-  },
-  largerHeaderTitle: {
-    fontSize: 20,
-  },
-  largerSummaryText: {
-    fontSize: 20,
-  },
-  largerSubtitle: {
-    fontSize: 22,
-  },
-  largerInfo: {
-    fontSize: 18,
-  },
-  largerRank: {
-    fontSize: 26,
-  },
-  largerSymbolName: {
-    fontSize: 18,
-  },
-  largerSymbolCount: {
-    fontSize: 16,
-  },
-  largerResetInfoText: {
-    fontSize: 18,
-  },
-  largerResetSubText: {
-    fontSize: 16,
-  },
-  largerResetDateText: {
-    fontSize: 14,
+    borderColor: COLORS.primary,
   },
 });

@@ -1,4 +1,4 @@
-// screens/RoleSelectionScreen.js
+// screens/RoleSelectionScreen.js - REVAMPED UI (autism-friendly, modern, clean)
 import React from "react";
 import {
   View,
@@ -12,54 +12,87 @@ import {
 } from "react-native";
 import { useAccessibility } from "../context/AccessibilityContext";
 
+// ── Design tokens (consistent with LoginScreen) ─────────────────
+const COLORS = {
+  bg: "#F4F8F7",
+  card: "#FFFFFF",
+  primary: "#4AADA3",
+  primaryDark: "#37877E",
+  primaryLight: "#E6F4F3",
+  text: "#2C3E3D",
+  textSoft: "#6B8280",
+  textOnPrimary: "#FFFFFF",
+  border: "#D6E8E6",
+  shadow: "#2C3E3D",
+  childAccent: "#4AADA3",    // teal — calm, trustworthy
+  caregiverAccent: "#5A8A85", // deeper teal — slightly more authoritative
+  childIconBg: "#E6F4F3",
+  caregiverIconBg: "#D6EDEB",
+  overlayBg: "rgba(244, 248, 247, 0.70)",
+};
+
+const RADIUS = {
+  sm: 12,
+  md: 16,
+  lg: 20,
+  xl: 24,
+  full: 999,
+};
+// ────────────────────────────────────────────────────────────────
+
 export default function RoleSelectionScreen({ navigation, setRole }) {
   const { highContrast, largerText } = useAccessibility();
 
+  const dynTitle = largerText ? 30 : 24;
+  const dynSubtitle = largerText ? 19 : 15;
+  const dynBtnText = largerText ? 18 : 16;
+  const dynHeaderTitle = largerText ? 20 : 18;
+
   return (
     <View style={styles.container}>
-      {/* Teal Header - Consistent with other screens */}
-      <View style={[styles.header, { backgroundColor: '#009688' }]}>
+      {/* ── Header ──────────────────────────────────────────────── */}
+      <View style={styles.header}>
         <StatusBar
           translucent
-          backgroundColor="#009688"
+          backgroundColor={COLORS.primary}
           barStyle="light-content"
         />
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView>
           <View style={styles.headerContent}>
-            <Text style={[
-              styles.headerTitle,
-              largerText && styles.largerHeaderTitle
-            ]}>
+            {/* Brand mark */}
+            <View style={styles.headerLogoCircle}>
+              <Text style={styles.headerLogoEmoji}>🤝</Text>
+            </View>
+            <Text style={[styles.headerTitle, { fontSize: dynHeaderTitle }]}>
               Jambo Rafiki
             </Text>
           </View>
         </SafeAreaView>
       </View>
 
+      {/* ── Background ──────────────────────────────────────────── */}
       <ImageBackground
         source={require("../assets/rafiki_background.png")}
         style={styles.background}
         resizeMode="cover"
       >
+        {/* Soft tinted overlay */}
+        <View style={styles.overlay} />
+
         <View style={styles.content}>
-          <Text style={[
-            styles.title,
-            largerText && styles.largerTitle
-          ]}>
+          {/* Heading block */}
+          <Text style={[styles.title, { fontSize: dynTitle }]}>
             Welcome to Rafiki Assist!
           </Text>
-          <Text style={[
-            styles.subtitle,
-            largerText && styles.largerSubtitle
-          ]}>
-            Kindly select your role Rafiki
+          <Text style={[styles.subtitle, { fontSize: dynSubtitle }]}>
+            Who are you today?
           </Text>
 
+          {/* ── Child card ─────────────────────────────────────── */}
           <TouchableOpacity
             style={[
-              styles.button, 
-              { backgroundColor: "#3da49a" },
-              highContrast && styles.highContrastBorder
+              styles.roleCard,
+              highContrast && styles.highContrastBorder,
             ]}
             onPress={() => {
               setRole("child");
@@ -68,20 +101,29 @@ export default function RoleSelectionScreen({ navigation, setRole }) {
             accessibilityLabel="I am a child"
             accessibilityRole="button"
             accessibilityHint="Selects child mode with symbol communication"
+            activeOpacity={0.85}
           >
-            <Text style={[
-              styles.buttonText,
-              largerText && styles.largerButtonText
-            ]}>
-              I am a child
-            </Text>
+            <View style={[styles.roleIconCircle, { backgroundColor: COLORS.childIconBg }]}>
+              <Text style={styles.roleIcon}>🧒</Text>
+            </View>
+            <View style={styles.roleTextBlock}>
+              <Text style={[styles.roleTitle, { fontSize: dynBtnText + 1 }]}>
+                I am a child
+              </Text>
+              <Text style={[styles.roleHint, { fontSize: dynSubtitle - 2 }]}>
+                Symbol & picture communication
+              </Text>
+            </View>
+            <View style={styles.roleChevron}>
+              <Text style={styles.chevronText}>›</Text>
+            </View>
           </TouchableOpacity>
 
+          {/* ── Caregiver card ─────────────────────────────────── */}
           <TouchableOpacity
             style={[
-              styles.button, 
-              { backgroundColor: "#3da49a" },
-              highContrast && styles.highContrastBorder
+              styles.roleCard,
+              highContrast && styles.highContrastBorder,
             ]}
             onPress={() => {
               setRole("caregiver");
@@ -90,13 +132,22 @@ export default function RoleSelectionScreen({ navigation, setRole }) {
             accessibilityLabel="I am a caregiver"
             accessibilityRole="button"
             accessibilityHint="Selects caregiver mode with management features"
+            activeOpacity={0.85}
           >
-            <Text style={[
-              styles.buttonText,
-              largerText && styles.largerButtonText
-            ]}>
-              I am a caregiver
-            </Text>
+            <View style={[styles.roleIconCircle, { backgroundColor: COLORS.caregiverIconBg }]}>
+              <Text style={styles.roleIcon}>👩‍⚕️</Text>
+            </View>
+            <View style={styles.roleTextBlock}>
+              <Text style={[styles.roleTitle, { fontSize: dynBtnText + 1 }]}>
+                I am a caregiver
+              </Text>
+              <Text style={[styles.roleHint, { fontSize: dynSubtitle - 2 }]}>
+                Manage settings & communication boards
+              </Text>
+            </View>
+            <View style={styles.roleChevron}>
+              <Text style={styles.chevronText}>›</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </ImageBackground>
@@ -105,83 +156,136 @@ export default function RoleSelectionScreen({ navigation, setRole }) {
 }
 
 const styles = StyleSheet.create({
-  container: { 
+  // ── Layout ────────────────────────────────────────────────────
+  container: {
     flex: 1,
   },
+
+  // ── Header ───────────────────────────────────────────────────
   header: {
-    // Header now covers status bar area
-  },
-  safeArea: {
-    // Safe area for notch devices
+    backgroundColor: COLORS.primary,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 10,
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 8 : 16,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === "ios" ? 8 : 16,
+    paddingBottom: 18,
   },
-  headerTitle: { 
-    color: "#fff", 
-    fontSize: 18, 
+  headerLogoCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: RADIUS.full,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerLogoEmoji: {
+    fontSize: 16,
+  },
+  headerTitle: {
+    color: COLORS.textOnPrimary,
     fontWeight: "700",
-    textAlign: "center",
+    letterSpacing: 0.3,
   },
+
+  // ── Background & overlay ──────────────────────────────────────
   background: {
     flex: 1,
     width: "100%",
-    height: "100%",
   },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.overlayBg,
+  },
+
+  // ── Content ───────────────────────────────────────────────────
   content: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  title: { 
-    fontSize: 26, 
-    fontWeight: "700", 
-    marginBottom: 6, 
-    color: "#221717",
-    textAlign: "center",
-  },
-  subtitle: { 
-    fontSize: 17, 
-    marginBottom: 24, 
-    color: "#221717", 
-    textAlign: "center",
-  },
-  button: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    marginVertical: 10,
-    width: "100%",
-    maxWidth: 300,
-    alignItems: "center",
-  },
-  buttonText: { 
-    color: "#fff", 
-    fontSize: 16, 
-    fontWeight: "700" 
+    paddingHorizontal: 24,
   },
 
-  // Accessibility Styles
+  // ── Headings ──────────────────────────────────────────────────
+  title: {
+    fontWeight: "700",
+    color: COLORS.text,
+    textAlign: "center",
+    marginBottom: 6,
+    letterSpacing: 0.2,
+  },
+  subtitle: {
+    color: COLORS.textSoft,
+    textAlign: "center",
+    marginBottom: 32,
+    fontWeight: "500",
+  },
+
+  // ── Role cards ────────────────────────────────────────────────
+  roleCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.lg,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    marginBottom: 16,
+    width: "100%",
+    maxWidth: 340,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    elevation: 4,
+    gap: 14,
+    minHeight: 76, // large tap target
+  },
+  roleIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: RADIUS.full,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  roleIcon: {
+    fontSize: 26,
+  },
+  roleTextBlock: {
+    flex: 1,
+  },
+  roleTitle: {
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  roleHint: {
+    color: COLORS.textSoft,
+    fontWeight: "400",
+    lineHeight: 18,
+  },
+  roleChevron: {
+    width: 28,
+    height: 28,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  chevronText: {
+    color: COLORS.primary,
+    fontSize: 20,
+    fontWeight: "700",
+    lineHeight: 22,
+  },
+
+  // ── Accessibility ─────────────────────────────────────────────
   highContrastBorder: {
     borderWidth: 2,
-    borderColor: '#FF0000',
-  },
-  largerHeaderTitle: {
-    fontSize: 20,
-  },
-  largerTitle: {
-    fontSize: 30,
-  },
-  largerSubtitle: {
-    fontSize: 19,
-  },
-  largerButtonText: {
-    fontSize: 18,
+    borderColor: COLORS.primary,
   },
 });
