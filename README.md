@@ -233,13 +233,6 @@ Important: the current `firestore.rules` file contains time-limited development-
 
 This README has been updated to reflect the current implemented mobile application and its documented goals: supporting caregiver-child communication, accessibility, symbol-assisted interaction, and secure account access. It is intended to serve as the main technical and project-facing overview for the repository.
 
-## Authors and Project Identity
-
-Project owner:
-
-- Ashley T668
-- Email: `ashley.adhiambo@strathmore.edu`
-
 ## License
 
 This repository currently lists the project license as `0BSD` in `package.json`.
