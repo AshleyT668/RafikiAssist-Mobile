@@ -6,7 +6,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { onAuthStateChanged } from "firebase/auth";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { auth, is2FAEnabled } from "./firebaseConfig";
-import { ensureUserProfile } from "./services/userService";
+import { ensureUserProfile, getCurrentUserProfile } from "./services/userService";
 
 // Screens
 import LoginScreen from "./screens/LoginScreen";
@@ -175,6 +175,8 @@ function AppContent() {
       if (user) {
         try {
           await ensureUserProfile(user);
+          const profile = await getCurrentUserProfile();
+          setRole(profile?.role || null);
         } catch (profileError) {
           console.error("Failed to sync user profile:", profileError);
         }
@@ -251,7 +253,7 @@ function AppContent() {
       )}
 
       {/* Bottom navigation visible only when authenticated, verified, and role is selected */}
-      {user && emailVerified && role && !requires2FA && (
+      {user && emailVerified && !requires2FA && (
         <BottomNavigation 
           role={role}
           onRoleChange={setRole}

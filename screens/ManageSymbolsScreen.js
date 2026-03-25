@@ -68,7 +68,9 @@ export default function ManageSymbolsScreen({ navigation }) {
   // ── Image picker (unchanged) ─────────────────────────────────
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType?.Images
+        ? [ImagePicker.MediaType.Images]
+        : ["images"],
       allowsEditing: true,
       quality: 0.7,
     });
@@ -321,7 +323,17 @@ export default function ManageSymbolsScreen({ navigation }) {
           {/* ── Symbol list ───────────────────────────────────── */}
           {symbols.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <View style={styles.emptyCard}>
+              <View
+                style={[
+                  styles.emptyCard,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.border,
+                    shadowColor: theme.shadow,
+                  },
+                  highContrast && styles.highContrastBorder,
+                ]}
+              >
                 <Ionicons name="grid-outline" size={40} color={theme.primary} style={{ marginBottom: 10 }} />
                 <Text style={[styles.emptyText, { color: theme.text }]}>No symbols yet</Text>
                 <Text style={[styles.emptyHint, { color: theme.subtext }]}>Add your first symbol above</Text>
@@ -576,10 +588,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   emptyCard: {
-    backgroundColor: "rgba(255,255,255,0.93)",
     borderRadius: RADIUS.lg,
     padding: 32,
     alignItems: "center",
+    borderWidth: 1,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,

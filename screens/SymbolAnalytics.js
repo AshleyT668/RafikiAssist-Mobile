@@ -287,7 +287,17 @@ export default function SymbolAnalytics({ navigation }) {
             </>
           }
           ListEmptyComponent={
-            <View style={styles.emptyCard}>
+            <View
+              style={[
+                styles.emptyCard,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.border,
+                  shadowColor: theme.shadow,
+                },
+                highContrast && styles.highContrastBorder,
+              ]}
+            >
               <Ionicons name="bar-chart-outline" size={40} color={theme.primary} style={{ marginBottom: 10 }} />
               <Text style={[styles.emptyText, { color: theme.text, fontSize: dynBody + 2 }]}>No data yet</Text>
               <Text style={[styles.emptyHint, { color: theme.subtext, fontSize: dynBody }]}>
@@ -479,11 +489,11 @@ const styles = StyleSheet.create({
 
   // ── Empty state ───────────────────────────────────────────────
   emptyCard: {
-    backgroundColor: "rgba(255,255,255,0.93)",
     borderRadius: RADIUS.lg,
     padding: 32,
     alignItems: "center",
     marginTop: 8,
+    borderWidth: 1,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,

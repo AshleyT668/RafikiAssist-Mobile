@@ -13,28 +13,82 @@ const USERS_COLLECTION = "users";
 const USER_PROFILE_IMAGE_PATH = (uid, extension = "jpg") =>
   `userProfiles/${uid}/profile.${extension}`;
 
-function getBlobFromUri(uri) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.onload = function onLoad() {
-      resolve(xhr.response);
-    };
-    xhr.onerror = function onError() {
-      reject(new Error("Failed to read local image file"));
-    };
-    xhr.responseType = "blob";
-    xhr.open("GET", uri, true);
-    xhr.send(null);
-  });
+async function getBlobFromUri(uri) {
+  try {
+    const response = await fetch(uri);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return await response.blob();
+  } catch (fetchError) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.onload = function onLoad() {
+        resolve(xhr.response);
+      };
+      xhr.onerror = function onError() {
+        reject(new Error("Failed to read local image file"));
+      };
+      xhr.responseType = "blob";
+      xhr.open("GET", uri, true);
+      xhr.send(null);
+    });
+  }
 }
 
 function getImageMetadata(file = {}) {
-  const mimeType = file.mimeType || "image/jpeg";
+  const mimeType = file.mimeType || file.type || "image/jpeg";
   const extensionFromMime = mimeType.split("/")[1]?.toLowerCase();
   const extensionFromName = file.fileName?.split(".").pop()?.toLowerCase();
-  const extension = extensionFromName || extensionFromMime || "jpg";
+  const extensionFromUri = file.uri?.split("?")[0]?.split(".").pop()?.toLowerCase();
+  const extension = extensionFromName || extensionFromUri || extensionFromMime || "jpg";
 
   return { mimeType, extension };
+}
+
+function getUploadErrorMessage(error) {
+  const code = error?.code || "";
+  const rawDetails = error?.customData?.serverResponse || error?.serverResponse || error?.message || "";
+
+  if (code.includes("storage/unauthorized")) {
+    return "Storage permission denied. Deploy the latest Firebase Storage rules and try again.";
+  }
+
+  if (code.includes("storage/object-not-found") || code.includes("storage/bucket-not-found")) {
+    return "Firebase Storage is not configured correctly for this app.";
+  }
+
+  if (code.includes("storage/retry-limit-exceeded")) {
+    return "The upload timed out. Check your internet connection and try again.";
+  }
+
+  if (code.includes("storage/network-request-failed")) {
+    return "The upload could not reach Firebase Storage. Check your internet connection and Firebase Storage setup.";
+  }
+
+  if (!rawDetails) {
+    return "Failed to upload image.";
+  }
+
+  try {
+    const parsed = typeof rawDetails === "string" ? JSON.parse(rawDetails) : rawDetails;
+    const nestedMessage =
+      parsed?.error?.message ||
+      parsed?.error?.errors?.[0]?.message ||
+      parsed?.message;
+
+    if (nestedMessage) {
+      return `Failed to upload image: ${nestedMessage}`;
+    }
+  } catch (parseError) {
+    // Fall back to string handling below when the response is not JSON.
+  }
+
+  if (typeof rawDetails === "string" && rawDetails.trim().startsWith("<")) {
+    return "Firebase Storage returned an unexpected HTML response. Check that the storage bucket and Firebase project config are correct.";
+  }
+
+  return `Failed to upload image: ${String(rawDetails)}`;
 }
 
 const buildUserProfileData = (user, fields = {}) => ({
@@ -108,11 +162,10 @@ export async function uploadProfileImage(file) {
     const storageRef = ref(storage, USER_PROFILE_IMAGE_PATH(uid, extension));
     await uploadBytes(storageRef, blob, { contentType: mimeType });
     const url = await getDownloadURL(storageRef);
-    await ensureUserProfile(auth.currentUser, { photoURL: url });
+    await updateUserProfile({ photoURL: url });
     return url;
   } catch (error) {
-    const details = error?.serverResponse || error?.message || "Unknown upload error";
-    throw new Error(`Failed to upload image: ${details}`);
+    throw new Error(getUploadErrorMessage(error));
   } finally {
     if (blob?.close) {
       blob.close();
