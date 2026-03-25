@@ -2,7 +2,7 @@
 
 Rafiki Assist Mobile is an Expo React Native app built to support child-caregiver communication, symbol-based expression, caregiver support, and secure account access in one mobile experience.
 
-The current app includes Firebase-backed authentication, per-user profile storage, private user-scoped symbol data, profile photo uploads, optional TOTP-based two-factor authentication, accessibility settings, dark mode, analytics, and a caregiver chatbot interface.
+The current app includes Firebase-backed authentication, per-user profile storage, private user-scoped symbol data, profile photo uploads, optional TOTP-based two-factor authentication, accessibility settings, dark mode, analytics, and a caregiver chatbot with private per-user chat history.
 
 ## Current Status
 
@@ -13,6 +13,10 @@ This repository reflects the app in its current working state, including recent 
 - user-scoped local symbol persistence so one signed-in user does not see another user's symbols
 - profile photo upload flow through Firebase Storage
 - app-wide light and dark theme support across the major screens, cards, headers, and bottom navigation
+- chatbot history stored per authenticated user with local fallback support
+- chatbot history search, rename, pin, archive, delete, and undo-delete actions
+- chatbot quality-of-life features such as copy message, retry response, per-message timestamps, and welcome suggestions
+- Flask-friendly chatbot backend configuration through `expo.extra.rafikiApi`
 - Google sign-in groundwork for Firebase Auth
 
 ## Main Features
@@ -42,6 +46,9 @@ This repository reflects the app in its current working state, including recent 
 - Symbol creation, editing, deletion, and usage tracking
 - Weekly symbol analytics charts
 - Rafiki chatbot with fallback replies if the backend is unavailable
+- Private per-user chat history with open, search, rename, pin, archive, delete, and undo-delete support
+- Chat message actions including copy, retry/regenerate, timestamps, scroll-to-latest, and welcome suggestions for a fresh chat
+- Streaming-style response reveal in the chatbot UI
 
 ### Accessibility and Theme Support
 
@@ -77,6 +84,7 @@ This repository reflects the app in its current working state, including recent 
 - Firebase Storage
 - AsyncStorage
 - Expo Image Picker
+- Expo Clipboard
 - Expo Speech
 - Expo Auth Session
 - OTPAuth
@@ -88,6 +96,8 @@ This repository reflects the app in its current working state, including recent 
 .
 |-- App.js
 |-- app.json
+|-- firebase.json
+|-- .firebaserc
 |-- firebaseConfig.js
 |-- components/
 |-- context/
@@ -123,7 +133,10 @@ Important areas:
   Contains the Google sign-in helper logic used by the login flow.
 
 - `services/chatService.js`
-  Connects the app to the external chatbot backend.
+  Connects the app to the external chatbot backend defined through Expo config.
+
+- `services/chatHistoryService.js`
+  Stores per-user chatbot sessions, titles, pin/archive state, and local fallback history.
 
 ## Setup
 
@@ -190,8 +203,10 @@ Examples:
 
 - user profile documents live under `users/{uid}`
 - profile images are stored under `userProfiles/{uid}/...`
+- chatbot sessions live under `users/{uid}/chatSessions/{sessionId}`
 - account-protected TOTP data is tied to the authenticated user
 - locally persisted symbol data is scoped by user ID so accounts on the same device do not share symbol caches
+- locally persisted chat history is also scoped by user ID when Firestore is unavailable
 
 ## Google Sign-In Notes
 
@@ -211,7 +226,16 @@ Before enabling Google sign-in fully, make sure you have:
 
 ## Chatbot Backend
 
-The chatbot uses the API endpoint defined in [`services/chatService.js`](./services/chatService.js).
+The chatbot uses the API configuration defined in [`app.json`](./app.json) under `expo.extra.rafikiApi` and the request logic in [`services/chatService.js`](./services/chatService.js).
+
+Expected backend shape:
+
+- `POST /chat`
+  Receives JSON like `{ "message": "...", "history": [...] }`
+- `GET /health`
+  Returns a JSON health response
+
+The mobile app is currently set up for a Flask-style backend exposed through a public HTTPS URL such as a hosted Colab tunnel endpoint.
 
 If the backend is unavailable, the app falls back to built-in supportive responses in the chatbot screen.
 
@@ -229,6 +253,7 @@ The repository now includes owner-based Firestore and Storage rules intended to 
 
 - Google sign-in is not fully practical to test in Expo Go
 - The chatbot depends on an external backend URL
+- The chatbot's streaming effect is currently UI-side progressive reveal, not true server-side chunk streaming
 - Some Firebase Functions and Data Connect files are present but are not the main runtime path for the mobile app
 - Web support may require extra refinement compared with the native mobile flows
 
